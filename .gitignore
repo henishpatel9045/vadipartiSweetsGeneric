@@ -1,0 +1,11 @@
+static
+media-files
+
+*.pyc
+__pycache__
+
+*general.log*
+.env*
+!.env.template
+
+*.sqlite3

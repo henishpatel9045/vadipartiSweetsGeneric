@@ -1,0 +1,150 @@
+{% extends "booking/user_base.html" %} {% block child_content %}
+<div class="w-full">
+  {% if user.is_superuser %}
+  <div class="row mb-3 flex justify-content-between mx-1">
+    <h1 style="font-size: 2rem">Orders</h1>
+    <button class="btn btn-success text-white font-weight-bold p-1" style="font-size: 1.2rem"
+      onclick="downloadExcel();">
+      Download Excel
+    </button>
+  </div>
+  {% else %}
+  <h1 style="font-size: 1.5rem;">Your Orders</h1>
+
+  {% endif %}
+
+  <div class="row mb-3 flex justify-content-end" style="row-gap: 0.5rem;">
+    <div class="col-12 col-lg-6" style="text-align: left; background-color">
+      <span style="font-size: 1.5rem; font-weight: bold;">Total: </span>
+      <span style="font-size: 1.5rem; font-weight: bold; color: green;"">{{total_summary.user_total}} ₹ <a href="" style="font-size: 1rem;" class="btn-xs btn-link">See more</a></span>
+    </div>
+    <div class="col-12 col-lg-6">
+      <form class="input-group" method="get">
+        <input type="text" class="form-control" id="search" name="search"
+          placeholder="Search by bill number or customer name" value="{{ request.GET.search|default:'' }}" />
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="submit" id="search-button">
+            <i class="fa fa-search"></i> Search
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <table class="w-full table table-striped">
+    <thead>
+      <tr>
+        <th>Bill No.</th>
+        <th>Customer Name</th>
+        {% comment %}
+        <th>Date</th>
+        {% endcomment %}
+        <th>Total Amount</th>
+        <th>Advance Paid</th>
+        {% comment %}
+        <th>Delivered</th>
+        {% endcomment %}
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in page %}
+      <tr>
+        <td>{{ order.bill_number }}</td>
+        <td>{{ order.customer_name }}</td>
+        {% comment %}
+        <td>{{ order.date }}</td>
+        {% endcomment %}
+        <td style="color: green; font-weight: bold">
+          {{ order.total_order_price }} ₹
+        </td>
+        <td style="color: blue; font-weight: bold">
+          {{ order.received_amount }} ₹
+        </td>
+        {% comment %}
+        <td>
+          {% if order.delivered %}
+          <span class="badge badge-success">Yes</span>
+          {% else %}
+          <span class="badge badge-danger">No</span>
+          {% endif %}
+        </td>
+        {% endcomment %}
+        <td>
+          <a href="{% url 'edit-order-template' order.pk %}" class="btn btn-sm btn-primary">Edit</a>
+
+          <button onClick="deleteOrder({{order.pk}});" class="btn btn-sm btn-danger">
+            Delete
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="col-6 text-right">
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+        {% if page.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1" aria-label="First">
+            <span aria-hidden="true">&laquo;&laquo;</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">{{ page.number }} <span class="sr-only">(current)</span></span>
+        </li>
+
+        {% if page.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page.paginator.num_pages }}" aria-label="Last">
+            <span aria-hidden="true">&raquo;&raquo;</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+<script>
+  const deleteOrder = (orderId) => {
+    if (confirm(`Are you sure to delete order #${orderId}?`)) {
+      fetch(`/bookings/order/${orderId}/delete/`, {
+        method: "delete",
+        headers: {
+          "X-CSRFToken": "{{csrf_token}}",
+        },
+      })
+        .then((response) => {
+          if (!response.ok){
+            response.text().then((data) => {
+              console.log(data);
+              
+              alert(`Error: ${data}`);
+            }).then(() => {
+              window.location.reload();
+            });
+          }else{
+            window.location.reload();
+          }
+        })
+    }
+  };
+
+  const downloadExcel = () => {
+    window.location.href = "{% url 'download-excel' %}?type=user";
+  }
+</script>
+
+{% endblock %}

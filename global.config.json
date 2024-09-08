@@ -1,0 +1,5 @@
+{
+    "allowNewOrder": true,
+    "allowUpdateOrder": true,
+    "allowDeleteOrder": true
+}

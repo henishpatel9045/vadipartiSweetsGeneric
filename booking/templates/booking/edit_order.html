@@ -1,0 +1,240 @@
+{% extends 'booking/user_base.html' %}
+
+{% block title %}
+Edit Order
+{% endblock %}
+
+{% block child_content %}
+<style>
+    .currency-suffix {
+        font-weight: bold;
+        color: rgb(255, 0, 0);
+    }
+</style>
+<div class="w-100 p-0 p-md-2 mx-0">
+    <h1>Edit Order #{{order_number}}</h1>
+    <div class="w-100 mb-3">
+        <nav aria-label="breadcrumb"">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'user-bookings' %}">Bookings</a></li>
+                <li class="breadcrumb-item active">Edit Booking</li>
+            </ol>
+        </nav>
+    </div>
+
+
+    <form method="POST" class="w-100" id="order-form">
+        {% csrf_token %}
+        <div class="d-flex w-100 gap-2 justify-content-between mb-2">
+            <div class="form-group w-100">
+                <label for="order-id" class="">Order Number</label>
+                <input type="number" class="form-control" id="order-id" value="{{order_number}}">
+            </div>
+            <div class="form-group w-100">
+                <label for="order-date">Order Date</label>
+                <input type="date" class="form-control" id="order-date" value="{{order_date}}" required>
+            </div>
+        </div>
+        <div class="d-flex w-100 gap-2 justify-content-between mb-4">
+            <div class="form-group w-100">
+                <label for="customer-name">Customer Name</label>
+                <input type="text" class="form-control" id="customer-name" value="{{customer_name}}" required>
+            </div>
+            <div class="form-group w-100">
+                <label for="phone">Phone number</label>
+                <input type="text" class="form-control" id="phone" value="{{order.customer_phone}}">
+            </div>
+        </div>
+        <table class="table table-bordered table-dark table-striped w-100">
+            <thead class="w-100 bg-secondary">
+                <tr class="bg-secondary">
+                    <th>Item</th>
+                    <th>1 Kg</th>
+                    <th>500 Gm</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="form-table-body">
+
+                {% for item in items_data %}
+                <tr>
+                    <td>{{item.title}}</td>
+                    <td>
+                        
+                        {% if item.1000 %}
+                        <input type="number" class="form-control px-0 mx-0 text-center"
+                        name="item_{{item.1000.id}}_1000" min="0" id="item_{{item.1000.id}}_1000"
+                        value="{{item.1000.quantity}}">
+                        {% endif %}
+                            
+                    </td>
+                    <td>
+                        
+                        {% if item.500 %}
+                        <input type="number" class="form-control px-0 mx-0 text-center" name="item_{{item.500.id}}_500"
+                        min="0" id="item_{{item.500.id}}_500" value="{{item.500.quantity}}">
+                        {% endif %}
+                            
+                    </td>
+                    <td><input type="text" class="form-control currency-suffix px-0 mx-0 text-end"
+                            id="item_{{item.id}}_total" readonly></td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" class="text-end">Total</td>
+                    <td colspan="2"><input type="text" class="form-control currency-suffix text-end text-bg-success"
+                            id="total-amount" readonly></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-end">Amount Received</td>
+                    <td colspan="2"><input type="number" class="form-control currency-suffix text-end text-bg-white"
+                            id="received-amount" value="{{received_amount}}"></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-end">Remaining Amount</td>
+                    <td colspan="2"><input type="text" class="form-control currency-suffix text-end text-bg-danger  "
+                            id="remaining-amount" readonly  ></td>
+                </tr>
+                <tr>
+                    <td colspan="1" class="text-end">Special Note: </td>
+                    <td colspan="3"><textarea type="text" class="form-control" id="special-note"
+                            rows="3">{{special_note}}</textarea>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="mb-2 flex w-100 items-center justify-content-between">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 btn-lg">Submit</button>
+    </form>
+</div>
+
+
+<script>
+    const formTableBody = document.getElementById('form-table-body');
+    let orderTotal = document.getElementById("total-amount");
+    let receivedAmount = document.getElementById("received-amount");
+    let remainingAmount = document.getElementById("remaining-amount");
+    let orderId = document.getElementById("order-id");
+    let orderDate = document.getElementById("order-date");
+    let customerName = document.getElementById("customer-name");
+    let phone = document.getElementById("phone");
+    let specialNote = document.getElementById("special-note");
+
+    if (parseInt(receivedAmount.value) <= 0) {
+        receivedAmount.value = 0;
+    }
+
+    const calculateRemainingAmount = () => {
+        let orderVal = orderTotal.value.replace(/,/g, "")
+        let total = parseInt(orderVal) || 0;
+        let received = parseInt(receivedAmount.value) || 0;
+        let tmp = (total - received)
+        remainingAmount.value = tmp.toLocaleString() + " ₹";
+    }
+
+    const calculateOrderTotal = () => {
+        let total = 0;
+        let totalInputs = document.querySelectorAll('input[id^="item_"][id$="_total"]');
+        totalInputs.forEach(input => {
+            total += parseInt(input.value) || 0;
+        });
+        orderTotal.value = total.toLocaleString() + " ₹";
+        calculateRemainingAmount();
+    }
+
+    const calculateTotal = (item, price1000, price500) => {
+        let input1000 = document.getElementById(`item_${item?.[1000]?.id}_1000`) || 0;
+        let input500 = document.getElementById(`item_${item?.[500]?.id}_500`) || 0;
+        let totalInput = document.getElementById(`item_${item.id}_total`);
+        let inputTotal = ((input1000?.value || 0) * price1000) + ((input500?.value || 0) * price500)
+        totalInput.value = inputTotal + " ₹";
+    }
+
+    receivedAmount.addEventListener("input", (e) => {
+        calculateRemainingAmount();
+        if (parseInt(receivedAmount.value) <= 0) {
+            receivedAmount.value = 0;
+        }
+    })
+
+    const addItemEventListener = (item) => {
+        let price1000 = item?.[1000]?.price || 0;
+        let price500 = item?.[500]?.price || 0;
+
+        if (price1000 > 0) {
+            document.getElementById(`item_${item[1000].id}_1000`).addEventListener("input", (e) => {
+                calculateTotal(item, price1000, price500);
+                calculateOrderTotal();
+            })
+        }
+        if (price500 > 0) {
+            document.getElementById(`item_${item[500].id}_500`).addEventListener("input", (e) => {
+                calculateTotal(item, price1000, price500);
+                calculateOrderTotal();
+            })
+        }
+        calculateTotal(item, price1000, price500);
+        calculateOrderTotal();
+    }
+
+    const itemsData = {{ items_data| safe }};
+    itemsData.forEach(item => addItemEventListener(item));
+
+    document.getElementById("order-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        let reqData = {
+            booking: {},
+            order_id: orderId.value,
+            order_date: orderDate.value,
+            customer_name: customerName.value,
+            phone: phone.value,
+            special_note: specialNote.value,
+            received_amount: parseInt(receivedAmount.value) || 0,
+        };
+
+        itemsData.forEach(item => {
+            let input1000 = document.getElementById(`item_${item?.[1000]?.id}_1000`)?.value || 0;
+            let input500 = document.getElementById(`item_${item?.[500]?.id}_500`)?.value || 0;
+
+            if (parseInt(input1000) > 0) {
+                reqData.booking[item[1000].id] = {
+                    id: item[1000].order_id,
+                    quantity: parseInt(input1000)
+                };
+            }
+            if (parseInt(input500) > 0) {
+                reqData.booking[item[500].id] = {
+                    id: item[500].order_id,
+                    quantity: parseInt(input500)
+                };
+            }
+        })
+        if (Object.keys(reqData.booking).length === 0) {
+            alert("Please add at least one item");
+        } else {
+            fetch("{% url 'edit-order' order.pk %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify(reqData)
+            }).then(response => {
+                if (!response.ok) {
+                    let data = response.json().then(data => {
+                        alert(`Failed to create order.\nError: ${data}`);
+                    })
+                } else {
+                    window.location.href = "{% url 'edit-order-template' order.pk %}";
+                }
+            })
+        }
+    })
+
+</script>
+
+{% endblock %}

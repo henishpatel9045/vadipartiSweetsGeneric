@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}My Orders{% endblock %}
+
+
+{% block content %}
+
+<div style="min-width: 100vw; min-height: 100vh; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light" style="width: 100%;">
+      <a class="navbar-brand font-weight-bolder" style="color: black" href="#">My Orders</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link font-weight-bold" href="{% url 'user-home' %}">Home</a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="{% url 'new-order' %}">Add Order</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="">Logout</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="/admin">Login</a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+</nav>
+
+<div class="w-100 mt-2 mb-3" style="flex: 1; width: 100%;">
+{% block child_content %}
+    
+{% endblock child_content %}
+    </div>
+
+<div style="margin-bottom: 0.5rem; margin-top: 0.1rem;">Made with ❤️ by <a href="https://www.instagram.com/henish.patel.77">Henish A. Patel</a></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+{% endblock %}

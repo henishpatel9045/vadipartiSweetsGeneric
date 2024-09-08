@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+Configuration
+{% endblock title %}
+
+
+{% block content %}
+
+<div class="w-100 d-flex flex-column align-items-center justify-content-start">
+    <h1 class="mb-4">App Settings</h1>
+
+    <form action="/management/" method="post" class="p-2 border border-1 border-black rounded-2">
+        {% csrf_token %}
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="allowNewOrder" name="allow_new_order" {% if allow_new_order %}
+                checked {% endif %}>
+            <label class="form-check-label" for="allowNewOrder">Allow New Order</label>
+        </div>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="allowEditOrder" name="allow_update_order" {% if allow_edit_order %}
+            checked
+        {% endif %}>
+            <label class="form-check-label" for="allowEditOrder">Allow Edit Order</label>
+        </div>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="allowDeleteOrder" name="allow_delete_order" {% if allow_delete_order %}
+            checked
+        {% endif %}>
+            <label class="form-check-label" for="allowDeleteOrder">Allow Delete Order</label>
+        </div>
+        <input type="submit" value="Save" class="mt-4 btn btn-success btn-lg">
+    </form>
+</div>
+
+{% endblock content %}
