@@ -30,12 +30,15 @@ class Order(DateTimeBaseModel):
     def __str__(self):
         return f"{self.bill_number} {self.customer_name}"
 
+    class Meta:
+        ordering = ["bill_number"]
+
 
 class OrderItem(DateTimeBaseModel):
-    booking = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items", db_index=True)
-    item = models.ForeignKey(
-        Item, on_delete=models.CASCADE, related_name="order_items"
+    booking = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="items", db_index=True
     )
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="order_items")
     order_quantity = models.IntegerField(default=0)
     delivered_quantity = models.IntegerField(default=0)
     comment = models.TextField(null=True, blank=True)

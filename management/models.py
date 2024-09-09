@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+
 from vadipartiSweets.constants import BILL_BOOK_SIZE, BOX_SIZES
 
 
@@ -32,3 +34,18 @@ class BillBook(models.Model):
 
     def __str__(self):
         return f"{self.book_number}"
+    
+    class Meta:
+        ordering = ["book_number"]
+
+
+class UserDeposits(models.Model):
+    user = models.ForeignKey(
+        "custom_auth.User", on_delete=models.CASCADE, db_index=True
+    )
+    amount = models.FloatField(default=0.0)
+    date = models.DateTimeField(default=timezone.now)
+    comment = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.amount}"

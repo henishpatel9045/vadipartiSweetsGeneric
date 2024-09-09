@@ -3,11 +3,16 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 import json
 
-from export.export import export_all_data, export_data, export_user_data
-
+from export.export import export_all_data, export_user_data
 from .forms import ConfigForm
+from booking.models import Order, OrderItem
+from .models import Item, ItemBase, BillBook, UserDeposits
+from custom_auth.models import User
 
 # Create your views here.
 
@@ -47,12 +52,11 @@ def home(request):
 
 @login_required
 def download_excel(request):
-    # if request.user.is_superuser == False:
-    #     return JsonResponse({"detail": "You are not authorized to perform this action"})
-    # try:
-        # Generate your Excel data and save it to a BytesIO object
+    if request.user.is_superuser == False:
+        return JsonResponse({"detail": "You are not authorized to perform this action"})
+    try:
         download_type = request.GET.get("type", "all")
-        
+
         if download_type == "all":
             FILE_NAME = f"Sales Report ({timezone.now().strftime('%d-%m-%Y')}).xlsx"
             excel_buffer = export_all_data()
@@ -64,6 +68,161 @@ def download_excel(request):
         response["Content-Disposition"] = f'attachment; filename="{FILE_NAME}"'
         response.write(excel_buffer)
         return response
-    # except Exception as e:
-    #     print(e)
-    #     return JsonResponse({"detail": "error occurred"})
+    except Exception as e:
+        print(e)
+        return JsonResponse({"detail": "error occurred"})
+
+
+class AdminDashboardAPIView(APIView):
+    def get(self, request):
+        """_summary_
+
+        1. Total Orders
+        2. Total Orde Amount
+        3. Total Deposit Amount
+        4. Total Dealers
+        5. List of dealers with total order, total order amount, total deposit amount
+        7. Dict data of items for pie chart for total order quantity
+        8. Dict data of items for pie chart for total order amount
+        6. List of items with box wise order quantity, total order quantity
+        7. List of items with box wise order ready quantity
+        """
+
+        user_deposit_queryset = UserDeposits.objects.prefetch_related("user").all()
+        order_item_queryset = OrderItem.objects.prefetch_related(
+            "item", "item__base_item", "booking", "booking__book", "booking__book__user"
+        ).all()
+        bill_book_queryset = BillBook.objects.prefetch_related("user").all()
+
+        orders: set[Order] = set()
+        items_quantity = {}
+        for order_item in order_item_queryset:
+            orders.add(order_item.booking)
+            if order_item.item.base_item.name not in items_quantity:
+                items_quantity[order_item.item.base_item.name] = {
+                    "quantity": 0,
+                    "amount": 0,
+                    "box_quantity": {},
+                }
+            items_quantity[order_item.item.base_item.name][
+                "quantity"
+            ] += order_item.order_quantity * int(order_item.item.box_size)
+            items_quantity[order_item.item.base_item.name]["amount"] += (
+                order_item.order_quantity * order_item.item.price
+            )
+
+            if (
+                str(order_item.item.box_size)
+                not in items_quantity[order_item.item.base_item.name]["box_quantity"]
+            ):
+                items_quantity[order_item.item.base_item.name]["box_quantity"][
+                    str(order_item.item.box_size)
+                ] = {
+                    "order_quantity": 0,
+                    "delivered_quantity": 0,
+                }
+            items_quantity[order_item.item.base_item.name]["box_quantity"][
+                str(order_item.item.box_size)
+            ]["order_quantity"] += order_item.order_quantity
+            items_quantity[order_item.item.base_item.name]["box_quantity"][
+                str(order_item.item.box_size)
+            ]["delivered_quantity"] += order_item.delivered_quantity
+
+        {
+            "Kaju Katri": {
+                "quantity": 0,
+                "amount": 0,
+                "box_quantity": {
+                    "1": {
+                        "order_quantity": 0,
+                        "delivered_quantity": 0,
+                    },
+                    "2": {
+                        "order_quantity": 0,
+                        "delivered_quantity": 0,
+                    },
+                },
+            }
+        }
+
+        dealer_wise_data = {}
+        for bill_book in bill_book_queryset:
+            dealer_name = bill_book.user.username
+            if dealer_name not in dealer_wise_data:
+                dealer_wise_data[dealer_name] = {
+                    "total_order": 0,
+                    "total_order_amount": 0,
+                    "total_deposit": 0,
+                    "books": [],
+                }
+            dealer_wise_data[dealer_name]["books"].append(bill_book.book_number)
+
+        total_orders = 0
+        total_order_amount = 0
+        for order in orders:
+            total_orders += 1
+            total_order_amount += order.total_order_price
+            dealer_name = order.book.user.username
+            if dealer_name not in dealer_wise_data:
+                dealer_wise_data[dealer_name] = {
+                    "total_order": 0,
+                    "total_order_amount": 0,
+                    "total_deposit": 0,
+                }
+            dealer_wise_data[dealer_name]["total_order"] += 1
+            dealer_wise_data[dealer_name][
+                "total_order_amount"
+            ] += order.total_order_price
+
+        total_deposit_amount = 0
+        for user_deposit in user_deposit_queryset:
+            dealer_name = user_deposit.user.username
+            if dealer_name not in dealer_wise_data:
+                dealer_wise_data[dealer_name] = {
+                    "total_order": 0,
+                    "total_order_amount": 0,
+                    "total_deposit": 0,
+                }
+            dealer_wise_data[dealer_name]["total_deposit"] += user_deposit.amount
+            total_deposit_amount += user_deposit.amount
+
+        dealer_wise_data = [
+            {"dealer": dealer_name, **data}
+            for dealer_name, data in dealer_wise_data.items()
+        ]
+        dealer_wise_data = sorted(
+            dealer_wise_data, key=lambda x: x["total_order_amount"], reverse=True
+        )
+
+        item_box_wise_table_data = []
+        item_wise_table_data = []
+        for item in items_quantity:
+            item_data = items_quantity[item]
+            for item_box in item_data["box_quantity"]:
+                item_box_data = items_quantity[item]["box_quantity"][item_box]
+                item_box_wise_table_data.append(
+                    {
+                        "item": f"{item} - {item_box}",
+                        "order_quantity": item_box_data["order_quantity"],
+                        "delivered_quantity": item_box_data["delivered_quantity"],
+                    }
+                )
+            item_wise_table_data.append(
+                {
+                    "item": item,
+                    "quantity": f"{int(item_data["quantity"]) / 1000} KG",
+                    "amount": item_data["amount"],
+                }
+            )
+            
+        return Response(
+            {
+                "total_orders": total_orders,
+                "total_order_amount": total_order_amount,
+                "total_deposit_amount": total_deposit_amount,
+                "total_dealers": len(dealer_wise_data),
+                "dealer_wise_data": dealer_wise_data,
+                "item_wise_table_data": item_wise_table_data,
+                "item_box_wise_table_data": item_box_wise_table_data,
+            }
+        )

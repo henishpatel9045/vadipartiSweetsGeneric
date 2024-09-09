@@ -136,6 +136,10 @@ def update_booking(
     ALLOW_UPDATE_ORDER = settings.ALLOW_EDIT_ORDER
 
     booking = Order.objects.get(pk=pk)
+    if booking.is_special_price:
+        raise Exception(
+            "Special price orders cannot be updated directly. Please contact the admin to update this order."
+        )
     booking.customer_name = customer_name
     booking.comment = comment
     booking.received_amount = received_amount
