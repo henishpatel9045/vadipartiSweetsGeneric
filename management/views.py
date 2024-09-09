@@ -9,9 +9,10 @@ from rest_framework import status
 import json
 
 from export.export import export_all_data, export_user_data
+from vadipartiSweets.constants import BOX_SIZE_MAPPING
 from .forms import ConfigForm
 from booking.models import Order, OrderItem
-from .models import Item, ItemBase, BillBook, UserDeposits
+from .models import Item, ItemBase, BillBook, UserDeposits, DailyReadyItem
 from custom_auth.models import User
 
 # Create your views here.
@@ -75,24 +76,14 @@ def download_excel(request):
 
 class AdminDashboardAPIView(APIView):
     def get(self, request):
-        """_summary_
-
-        1. Total Orders
-        2. Total Orde Amount
-        3. Total Deposit Amount
-        4. Total Dealers
-        5. List of dealers with total order, total order amount, total deposit amount
-        7. Dict data of items for pie chart for total order quantity
-        8. Dict data of items for pie chart for total order amount
-        6. List of items with box wise order quantity, total order quantity
-        7. List of items with box wise order ready quantity
-        """
-
         user_deposit_queryset = UserDeposits.objects.prefetch_related("user").all()
         order_item_queryset = OrderItem.objects.prefetch_related(
             "item", "item__base_item", "booking", "booking__book", "booking__book__user"
         ).all()
         bill_book_queryset = BillBook.objects.prefetch_related("user").all()
+        ready_item_queryset = DailyReadyItem.objects.prefetch_related(
+            "item", "item__base_item"
+        ).all()
 
         orders: set[Order] = set()
         items_quantity = {}
@@ -102,6 +93,7 @@ class AdminDashboardAPIView(APIView):
                 items_quantity[order_item.item.base_item.name] = {
                     "quantity": 0,
                     "amount": 0,
+                    "ready_quantity": 0,
                     "box_quantity": {},
                 }
             items_quantity[order_item.item.base_item.name][
@@ -120,6 +112,7 @@ class AdminDashboardAPIView(APIView):
                 ] = {
                     "order_quantity": 0,
                     "delivered_quantity": 0,
+                    "ready_quantity": 0,
                 }
             items_quantity[order_item.item.base_item.name]["box_quantity"][
                 str(order_item.item.box_size)
@@ -128,18 +121,47 @@ class AdminDashboardAPIView(APIView):
                 str(order_item.item.box_size)
             ]["delivered_quantity"] += order_item.delivered_quantity
 
+        for ready_item in ready_item_queryset:
+            item_name = ready_item.item.base_item.name
+            if item_name not in items_quantity:
+                items_quantity[item_name] = {
+                    "quantity": 0,
+                    "amount": 0,
+                    "ready_quantity": 0,
+                    "box_quantity": {},
+                }
+            items_quantity[item_name][
+                "ready_quantity"
+            ] += ready_item.quantity
+            item_box = str(ready_item.item.box_size)
+            if (
+                item_box
+                not in items_quantity[item_name]["box_quantity"]
+            ):
+                items_quantity[item_name]["box_quantity"][
+                    str(ready_item.item.box_size)
+                ] = {
+                    "order_quantity": 0,
+                    "delivered_quantity": 0,
+                    "ready_quantity": 0,
+                }
+            items_quantity[item_name]["box_quantity"][item_box]["ready_quantity"] += ready_item.quantity
+        
         {
             "Kaju Katri": {
                 "quantity": 0,
                 "amount": 0,
+                "ready_quantity": 0,
                 "box_quantity": {
                     "1": {
                         "order_quantity": 0,
                         "delivered_quantity": 0,
+                        "ready_quantity": 0,
                     },
                     "2": {
                         "order_quantity": 0,
                         "delivered_quantity": 0,
+                        "ready_quantity": 0,
                     },
                 },
             }
@@ -202,9 +224,10 @@ class AdminDashboardAPIView(APIView):
                 item_box_data = items_quantity[item]["box_quantity"][item_box]
                 item_box_wise_table_data.append(
                     {
-                        "item": f"{item} - {item_box}",
+                        "item": f"{item} - {BOX_SIZE_MAPPING[str(item_box)]}",
                         "order_quantity": item_box_data["order_quantity"],
                         "delivered_quantity": item_box_data["delivered_quantity"],
+                        "ready_quantity": item_box_data["ready_quantity"],
                     }
                 )
             item_wise_table_data.append(
@@ -212,6 +235,7 @@ class AdminDashboardAPIView(APIView):
                     "item": item,
                     "quantity": f"{int(item_data["quantity"]) / 1000} KG",
                     "amount": item_data["amount"],
+                    "ready_quantity": item_data["ready_quantity"],
                 }
             )
             

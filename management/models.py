@@ -34,7 +34,7 @@ class BillBook(models.Model):
 
     def __str__(self):
         return f"{self.book_number}"
-    
+
     class Meta:
         ordering = ["book_number"]
 
@@ -49,3 +49,12 @@ class UserDeposits(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.amount}"
+
+
+class DailyReadyItem(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="ready_items")
+    quantity = models.IntegerField(default=0)
+    date = models.DateField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.item} - {self.quantity}"

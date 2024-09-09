@@ -2,9 +2,23 @@ from django.contrib import admin
 
 from booking.models import Order
 
-from .models import ItemBase, Item, BillBook
+from .models import ItemBase, Item, BillBook, DailyReadyItem
 
 # Register your models here.
+
+
+class ReadyItemInlineAdmin(admin.TabularInline):
+    model = DailyReadyItem
+    extra = 0
+
+
+@admin.register(Item)
+class ItemBaseAdmin(admin.ModelAdmin):
+    inlines = [ReadyItemInlineAdmin]
+    list_display = [
+        "base_item",
+        "box_size",
+    ]
 
 
 class ItemInlineAdmin(admin.TabularInline):

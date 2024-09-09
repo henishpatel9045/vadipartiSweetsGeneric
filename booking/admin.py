@@ -28,7 +28,7 @@ class OrderItemInline(admin.TabularInline):
 class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [OrderItemInline]
     list_display = ["bill_number"]
-    list_filter = (OrderDealerFilter, OrderBillBookFilter,)
+    list_filter = (OrderDealerFilter, OrderBillBookFilter,"is_special_price",)
     change_actions = ["full_dispatch"]
     actions = ["full_dispatch_changelist"]
     search_fields = ["bill_number", "customer_name", "customer_phone"]
