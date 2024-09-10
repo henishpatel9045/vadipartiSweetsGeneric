@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+
+<body>
+
+    <h1 class="title">{{title}}</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="title">Item</th>
+                <th class="title">Ordered Quantity</th>
+                <th class="title">Delivered Quantity</th>
+                <th class="title">Remaining Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in orders_data %}
+                <tr style="border-top: 2px solid black;">
+                    <th colspan="4" class="title">Book: {{book.book_number}} Total Summary</th>
+                </tr>
+                {% for item in book.book_summary %}
+                <tr>
+                    <td>{{item.name}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{item.order_quantity}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{item.delivered_quantity}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{item.remaining_quantity}}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="4"></td>
+                </tr>
+
+                {% for order in book.orders %}
+                <tr style="border-top: 1px solid gray;" >
+                    <td colspan="4" class="title">Order: {{order.bill_number}}</td>
+                </tr>
+                {% for order_item in order.items %}
+                <tr aria-hidden="true" >
+                    <td>{{order_item.name}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{order_item.order_quantity}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{order_item.delivered_quantity}}</td>
+                    <td style="text-align: center;" contenteditable="true">{{order_item.remaining_quantity}}</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+
+        *{
+            font-size: 1rem;
+        }
+
+        .title {
+            text-align: center;
+            text-wrap: wrap;
+            font-size: 1rem !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .border-box {
+            border: 1px solid black;
+        }
+    </style>
+</body>
+
+</html>

@@ -91,7 +91,7 @@ def update_price_of_booking(order: Order) -> Order:
         order (Order): Booking object.
     """
     total_order_amount = 0
-    order_items = OrderItem.objects.prefetch_related("item").filter(order=order)
+    order_items = OrderItem.objects.prefetch_related("item").filter(booking=order)
     for item in order_items:
         total_order_amount += item.order_quantity * item.item.price
 

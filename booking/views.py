@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from datetime import datetime
 from django.http import HttpRequest
 from django.http.response import HttpResponse as HttpResponse
@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 from django.contrib.auth.decorators import login_required as login_required_func
 from django.db.models import Sum, Count, Q
+from django.shortcuts import render
 from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,7 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from booking.decorators import login_required
 from booking.models import Order, OrderItem
 from booking.utils import create_booking, delete_order, update_booking
-from management.models import Item
+from management.models import BillBook, Item
+from vadipartiSweets.constants import BOX_SIZE_MAPPING
 
 
 class NewOrderTemplateView(TemplateView):
@@ -247,3 +249,174 @@ class UserBookingsTemplateView(TemplateView):
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
+
+
+class OrdersPrintTemplateView(TemplateView):
+    template_name = "booking/orders_print.html"
+    
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        type: Literal["user", "book", "order"]
+        pks=List[int]
+        """
+        context = {}
+        orders_type: Literal["user","book","order"] = self.request.GET.get("type")
+        pk = self.request.GET.get("pk")
+        
+        # Get dict of order items with order pk as keys and the order item as values
+        if orders_type == "user":
+            context["type"] = "user"
+            # orders = Order.objects.prefetch_related("book", "book__user").filter(book__user__pk=pk)
+            order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user", "item", "item__base_item").filter(booking__book__user__username=pk)
+            context["title"] = "User Orders for " + order_items[0].booking.book.user.username
+        else:
+            context["type"] = "book"
+            # orders = Order.objects.prefetch_related("book", "book__user").filter(book__pk=pk)
+            order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user", "item", "item__base_item").filter(booking__book__book_number=pk)
+            context["title"] = "Orders for Book Number " + str(order_items[0].booking.book.book_number)
+            
+
+        order_items_data = {}
+        for order_item in order_items:
+            booking_id = str(order_item.booking.bill_number)
+            if booking_id not in order_items_data:
+                order_items_data[booking_id] = {}
+            item_pk = str(order_item.item.pk)
+            if item_pk not in order_items_data[booking_id]:
+                order_items_data[booking_id][item_pk] = {
+                    "book_number": order_item.booking.book.book_number,
+                    "name": f"{order_item.item.base_item.name} - {BOX_SIZE_MAPPING[order_item.item.box_size]}",
+                    "order_quantity": order_item.order_quantity,
+                    "delivered_quantity": order_item.delivered_quantity,
+                    "remaining_quantity": order_item.order_quantity - order_item.delivered_quantity
+                }
+            else:
+                order_items_data[booking_id][item_pk]["order_quantity"] += order_item.order_quantity
+                order_items_data[booking_id][item_pk]["delivered_quantity"] += order_item.delivered_quantity
+                order_items_data[booking_id][item_pk]["remaining_quantity"] += order_item.order_quantity - order_item.delivered_quantity
+        
+        orders_data = {}
+        for order_item in order_items_data:
+            try:
+                item_data = order_items_data[order_item]
+                book_number = str(item_data[list(item_data.keys())[0]]["book_number"])
+                if book_number not in orders_data:
+                    orders_data[book_number] = {
+                        "book_number": book_number,
+                        "book_summary": {},
+                        "orders": []                        
+                    }
+                orders_data[book_number]["orders"].append({
+                    "bill_number": order_item,
+                    "items": item_data
+                })
+                for item in item_data:
+                    if item not in orders_data[book_number]["book_summary"]:
+                        orders_data[book_number]["book_summary"][item] = {
+                            "name": item_data[item]["name"],
+                            "order_quantity": item_data[item]["order_quantity"],
+                            "delivered_quantity": item_data[item]["delivered_quantity"],
+                            "remaining_quantity": item_data[item]["remaining_quantity"]
+                        }
+                    else:
+                        orders_data[book_number]["book_summary"][item]["order_quantity"] += item_data[item]["order_quantity"]
+                        orders_data[book_number]["book_summary"][item]["delivered_quantity"] += item_data[item]["delivered_quantity"]
+                        orders_data[book_number]["book_summary"][item]["remaining_quantity"] += item_data[item]["remaining_quantity"]
+            except Exception as e:
+                print(e)
+    
+        orders_data = list(orders_data.values())
+        orders_data = [{
+            "book_number": order["book_number"],
+            "book_summary": list(order["book_summary"].values()),
+            "orders": sorted(order["orders"], key=lambda x: int(x["bill_number"]))
+        } for order in orders_data]
+        orders_data = [{
+            **order,
+            "orders": [{
+                "bill_number": single_order["bill_number"],
+                "items": list(single_order["items"].values())
+                } for single_order in order["orders"]]
+        } for order in orders_data]
+        
+        orders_data.sort(key=lambda x: int(x["book_number"]))
+        context["orders_data"] = orders_data
+        print(context)
+        return context
+    
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        req_type = request.GET.get("type")
+        try:
+            return super().get(request, *args, **kwargs)
+        except IndexError as e:
+            return render(request, "message_page.html", {"type": "error", "message": f"No order exists for given {req_type}."})
+        except Exception as e:
+            return render(request, "message_page.html", {"type": "error", "message": str(e.args[0])})
+
+
+class TempAPI(APIView):
+    def get(self, request):
+        context = {}
+        orders_type: Literal["user","book","order"] = request.GET.get("type")
+        pk = request.GET.get("pk")
+        
+        # Get dict of order items with order pk as keys and the order item as values
+        if orders_type == "user":
+            context["type"] = "user"
+            # orders = Order.objects.prefetch_related("book", "book__user").filter(book__user__pk=pk)
+            order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user", "item", "item__base_item").filter(booking__book__user__pk=pk)
+            context["title"] = "User Orders for " + order_items[0].booking.book.user.username
+            order_items_data = {}
+            for order_item in order_items:
+                booking_id = str(order_item.booking.bill_number)
+                if booking_id not in order_items_data:
+                    order_items_data[booking_id] = {}
+                item_pk = str(order_item.item.pk)
+                if item_pk not in order_items_data[booking_id]:
+                    order_items_data[booking_id][item_pk] = {
+                        "book_number": order_item.booking.book.book_number,
+                        "name": f"{order_item.item.base_item.name} - {order_item.item.box_size}",
+                        "order_quantity": order_item.order_quantity,
+                        "delivered_quantity": order_item.delivered_quantity,
+                    }
+                else:
+                    order_items_data[booking_id][item_pk]["order_quantity"] += order_item.order_quantity
+                    order_items_data[booking_id][item_pk]["delivered_quantity"] += order_item.delivered_quantity
+            
+            orders_data = {}
+            for order_item in order_items_data:
+                try:
+                    item_data = order_items_data[order_item]
+                    book_number = str(item_data[list(item_data.keys())[0]]["book_number"])
+                    if book_number not in orders_data:
+                        orders_data[book_number] = {
+                            "book_number": book_number,
+                            "book_summary": {},
+                            "orders": []                        
+                        }
+                    orders_data[book_number]["orders"].append({
+                        "bill_number": order_item,
+                        "items": item_data
+                    })
+                    for item in item_data:
+                        if item not in orders_data[book_number]["book_summary"]:
+                            orders_data[book_number]["book_summary"][item] = {
+                                "name": item_data[item]["name"],
+                                "order_quantity": item_data[item]["order_quantity"],
+                                "delivered_quantity": item_data[item]["delivered_quantity"]
+                            }
+                        else:
+                            orders_data[book_number]["book_summary"][item]["order_quantity"] += item_data[item]["order_quantity"]
+                            orders_data[book_number]["book_summary"][item]["delivered_quantity"] += item_data[item]["delivered_quantity"]
+                except Exception as e:
+                    print(e)
+            
+            orders_data = list(orders_data.values())
+            orders_data = [{
+                **order,
+                "orders": sorted(order["orders"], key=lambda x: int(x["bill_number"]))
+            } for order in orders_data]
+            orders_data.sort(key=lambda x: int(x["book_number"]))
+            context["orders_data"] = orders_data
+        
+        return Response(context)

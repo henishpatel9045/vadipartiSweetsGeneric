@@ -1,7 +1,8 @@
 from django.contrib import admin
+from django.shortcuts import redirect
+from django_object_actions import DjangoObjectActions
 
 from booking.models import Order
-
 from .models import ItemBase, Item, BillBook, DailyReadyItem
 
 # Register your models here.
@@ -48,10 +49,14 @@ class OrderInlineAdmin(admin.TabularInline):
 
 
 @admin.register(BillBook)
-class BillBookAdmin(admin.ModelAdmin):
+class BillBookAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [OrderInlineAdmin]
     list_display = [
         "book_number",
         "user",
     ]
     search_fields = ["book_number"]
+    change_actions = ["print",]
+
+    def print(self, request, obj: BillBook):
+        return redirect(f"/bookings/print?type=book&pk={obj.book_number}")

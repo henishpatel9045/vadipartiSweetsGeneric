@@ -1,6 +1,6 @@
 from django.urls import path
 
-from booking.views import NewOrderTemplateView, CreateOrderView, EditOrderView, EditOrderTemplateView, UserHomeTemplateView, UserBookingsTemplateView, deleteOrderView
+from booking.views import NewOrderTemplateView, CreateOrderView, EditOrderView, EditOrderTemplateView, UserHomeTemplateView, UserBookingsTemplateView, deleteOrderView, TempAPI, OrdersPrintTemplateView
 
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path("order/<str:pk>/delete/", deleteOrderView, name="delete-order"),
     path("user/home", UserHomeTemplateView.as_view(), name="user-home"),
     path("user/bookings", UserBookingsTemplateView.as_view(), name="user-bookings"),
+    path("print", OrdersPrintTemplateView.as_view(), name="booking-print"),
 ]

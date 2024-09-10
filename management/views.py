@@ -12,8 +12,7 @@ from export.export import export_all_data, export_user_data
 from vadipartiSweets.constants import BOX_SIZE_MAPPING
 from .forms import ConfigForm
 from booking.models import Order, OrderItem
-from .models import Item, ItemBase, BillBook, UserDeposits, DailyReadyItem
-from custom_auth.models import User
+from .models import BillBook, UserDeposits, DailyReadyItem
 
 # Create your views here.
 
