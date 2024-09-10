@@ -1,0 +1,62 @@
+{% extends 'booking/user_base.html' %} {% block child_content %}
+<style>
+  .card-link-item {
+    min-height: 150px;
+    background-color: white;
+    box-shadow: 0px 0px 10px 0px #00000033;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    transition: all 0.3s;
+  }
+
+  body {
+    background-color: #121212;
+  }
+
+  .card-link-item:hover {
+    background-color: #74b5f7;
+    transform: scale(1.05);
+  }
+</style>
+
+<div class="card-footer p-4">
+  <div class="row row-gap-3">
+    <div class="col-12 col-md-4">
+      <a
+        href="{% url 'download-excel' %}?type=all"
+        class="btn btn-outline-secondary text-center card-link-item"
+      >
+        Download Excel Sheet
+      </a>
+    </div>
+    <div class="col-12 col-md-4">
+      <a
+        href="{% url 'admin-dashboard' %}"
+        class="btn btn-outline-secondary text-center card-link-item"
+      >
+        Dashboard
+      </a>
+    </div>
+    <div class="col-12 col-md-4">
+      <a
+        href="/management/configuration"
+        class="btn btn-outline-secondary text-center card-link-item"
+      >
+        App Configuration
+      </a>
+    </div>
+    <div class="col-12 col-md-4">
+      <a
+        href="/bookings/print"
+        class="btn btn-outline-secondary text-center card-link-item"
+      >
+        Print Orders
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock child_content %}

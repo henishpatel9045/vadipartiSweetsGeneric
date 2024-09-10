@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import User
 from management.models import UserDeposits
+from .forms import CustomUserCreationForm
 
 # Register your models here.
 
@@ -17,3 +18,4 @@ class UserModelAdmin(UserAdmin):
     inlines = [
         UserDepositsInline,
     ]
+    add_form = CustomUserCreationForm

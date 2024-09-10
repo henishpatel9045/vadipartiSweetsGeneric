@@ -219,7 +219,7 @@ def export_all_data():
         queryset = OrderItem.objects.prefetch_related(
             "booking", "booking__book", "booking__book__user", "item", "item__base_item"
         )
-        for user in User.objects.all().exclude(is_superuser=True):    
+        for user in User.objects.all():
             SHEET_NAME = f"{user.username}"
             worksheet = excel_file.add_worksheet(SHEET_NAME)
             export_data(queryset.filter(booking__book__user=user), worksheet, excel_file, output)

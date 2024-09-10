@@ -11,7 +11,7 @@ Configuration
 <div class="w-100 d-flex flex-column align-items-center justify-content-start">
     <h1 class="mb-4">App Settings</h1>
 
-    <form action="/management/" method="post" class="p-2 border border-1 border-black rounded-2">
+    <form action="/management/configuration" method="post" class="p-2 border border-1 border-black rounded-2">
         {% csrf_token %}
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="allowNewOrder" name="allow_new_order" {% if allow_new_order %}

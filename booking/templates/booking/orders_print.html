@@ -9,6 +9,23 @@
 
 <body>
 
+    <form action="/bookings/print" method="get" class="no-print">
+        <div>
+            <select name="type">
+                <option value="user" 
+                {% if request.GET.type == 'user' or not request.GET.type %}
+                    selected
+                {% endif %}
+                    >User</option>
+                <option value="book" {% if request.GET.type == 'book' %}
+                selected
+            {% endif %}>Book</option>
+            </select>
+            <input type="text" name="pk" placeholder="Username or Book Number" value="{{request.GET.pk}}">
+            <input type="submit" value="Search">
+        </div>
+    </form>
+
     <h1 class="title">{{title}}</h1>
 
     <table>

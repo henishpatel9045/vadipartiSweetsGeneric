@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 import json
 
 from export.export import export_all_data, export_user_data
@@ -40,7 +39,7 @@ def home(request):
             setattr(settings, "ALLOW_EDIT_ORDER", config.get("allowUpdateOrder"))
             setattr(settings, "ALLOW_DELETE_ORDER", config.get("allowDeleteOrder"))
 
-            return redirect("/management")
+            return redirect("/management/configuration")
 
     context = {
         "allow_new_order": ALLOW_NEW_ORDER,
@@ -52,8 +51,6 @@ def home(request):
 
 @login_required
 def download_excel(request):
-    if request.user.is_superuser == False:
-        return JsonResponse({"detail": "You are not authorized to perform this action"})
     try:
         download_type = request.GET.get("type", "all")
 

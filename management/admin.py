@@ -55,7 +55,7 @@ class BillBookAdmin(DjangoObjectActions, admin.ModelAdmin):
         "book_number",
         "user",
     ]
-    search_fields = ["book_number"]
+    search_fields = ["book_number", "user__username",]
     change_actions = ["print",]
 
     def print(self, request, obj: BillBook):
