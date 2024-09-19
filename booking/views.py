@@ -232,11 +232,10 @@ class UserBookingsTemplateView(TemplateView):
                 )
                 if self.request.user.is_superuser == False
                 else Order.objects.prefetch_related("book", "book__user").filter(
-                    Q(bill_number__icontains=search
-                      | Q(customer_name__icontains=search)
+                    Q(bill_number__icontains=search)
+                    | Q(customer_name__icontains=search)
                     | Q(customer_phone__icontains=search))
                 )
-            )
         else:
             dealer_orders = (
                 Order.objects.prefetch_related("book", "book__user").filter(book__user=self.request.user)
