@@ -128,7 +128,7 @@ class AdminDashboardAPIView(APIView):
                 }
             items_quantity[item_name][
                 "ready_quantity"
-            ] += ready_item.quantity
+            ] += ready_item.quantity * int(ready_item.item.box_size)
             item_box = str(ready_item.item.box_size)
             if (
                 item_box
@@ -142,26 +142,6 @@ class AdminDashboardAPIView(APIView):
                     "ready_quantity": 0,
                 }
             items_quantity[item_name]["box_quantity"][item_box]["ready_quantity"] += ready_item.quantity
-        
-        {
-            "Kaju Katri": {
-                "quantity": 0,
-                "amount": 0,
-                "ready_quantity": 0,
-                "box_quantity": {
-                    "1": {
-                        "order_quantity": 0,
-                        "delivered_quantity": 0,
-                        "ready_quantity": 0,
-                    },
-                    "2": {
-                        "order_quantity": 0,
-                        "delivered_quantity": 0,
-                        "ready_quantity": 0,
-                    },
-                },
-            }
-        }
 
         dealer_wise_data = {}
         for bill_book in bill_book_queryset:
@@ -229,7 +209,7 @@ class AdminDashboardAPIView(APIView):
             item_wise_table_data.append(
                 {
                     "item": item,
-                    "quantity": f"{int(item_data["quantity"]) / 1000} KG",
+                    "quantity": item_data["quantity"],
                     "amount": item_data["amount"],
                     "ready_quantity": item_data["ready_quantity"],
                 }

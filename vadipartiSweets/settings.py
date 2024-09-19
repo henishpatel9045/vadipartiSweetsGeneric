@@ -121,6 +121,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "custom_auth.User"
 
+CSRF_TRUSTED_ORIGINS = ["https://mantis-super-blowfish.ngrok-free.app"]
+
 # Custom Configurations
 
 config = json.load(open(BASE_DIR / "global.config.json"))
@@ -129,4 +131,4 @@ ALLOW_NEW_ORDER = config.get("allowNewOrder")
 ALLOW_EDIT_ORDER = config.get("allowUpdateOrder")
 ALLOW_DELETE_ORDER = config.get("allowDeleteOrder")
 
-DASHBOARD_EMBED_URL = "https://www.google.com"
+DASHBOARD_EMBED_URL = "https://app.appsmith.com/app/vadiparti-sweets-dashboard/dashboard-66dda421dbcde234956eab38?embed=true"
