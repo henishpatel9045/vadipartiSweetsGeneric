@@ -156,7 +156,7 @@ class EditOrderView(APIView):
                 order_items = []
                 for item in booking_data.keys():
                     order_items.append(
-                        {"item": items[f"{item}"], "quantity": booking_data[item]["quantity"], "order_item": tmp.get(f"{booking_data[item]["id"]}", None)}
+                        {"item": items[f"{item}"], "quantity": booking_data[item]["quantity"], "order_item": tmp.get(f"{booking_data[item]['id']}", None)}
                     )            
 
                 update_booking(
