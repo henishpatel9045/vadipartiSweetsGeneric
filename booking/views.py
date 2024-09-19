@@ -91,7 +91,7 @@ class CreateOrderView(APIView):
                 )
                 return Response("OK")
         except IntegrityError:
-            return Response(f"Order with order number {data["order_id"]} already exists.", status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"Order with order number {data['order_id']} already exists.", status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                str(e.args[0]), status=status.HTTP_400_BAD_REQUEST
@@ -172,7 +172,7 @@ class EditOrderView(APIView):
                 
                 return Response("OK")
         except IntegrityError:
-            return Response(f"Order with order number {data["order_id"]} already exists.", status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"Order with order number {data['order_id']} already exists.", status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
             str(e.args[0]), status=status.HTTP_400_BAD_REQUEST
