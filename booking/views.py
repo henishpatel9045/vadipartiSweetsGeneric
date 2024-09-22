@@ -140,7 +140,6 @@ class EditOrderView(APIView):
     def post(self, request: Request, pk, *args, **kwargs) -> Response:
         try:
             with transaction.atomic():
-                print(request.data)
                 data = request.data
                 items = {}
                 for item in Item.objects.prefetch_related("base_item").all():

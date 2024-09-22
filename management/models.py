@@ -9,6 +9,7 @@ class ItemBase(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to="items", null=True, blank=True)
+    stop_taking_order = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name

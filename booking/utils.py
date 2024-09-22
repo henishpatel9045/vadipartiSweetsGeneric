@@ -65,6 +65,8 @@ def create_booking(
     total_order_amount = 0
     order_items = []
     for item in items:
+        if item["item"].base_item.stop_taking_order:
+            raise Exception(f"{item['item'].base_item.name} is not available.")
         booking_item = OrderItem()
         booking_item.booking = booking
         booking_item.item = item["item"]
@@ -153,11 +155,18 @@ def update_booking(
         order_items = []
         for item in items:
             if item["order_item"]:
+                if (
+                    item["item"].base_item.stop_taking_order
+                    and order_item.order_quantity < item["quantity"]
+                ):
+                    raise Exception(f"{item['item'].base_item.name} is not available.")
                 order_item: OrderItem = item["order_item"]
                 order_item.order_quantity = item["quantity"]
                 order_item.save()
                 total_order_amount += item["quantity"] * item["item"].price
             else:
+                if item["item"].base_item.stop_taking_order:
+                    raise Exception(f"{item['item'].base_item.name} is not available.")
                 booking_item = OrderItem()
                 booking_item.booking = booking
                 booking_item.item = item["item"]
