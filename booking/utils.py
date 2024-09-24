@@ -114,6 +114,7 @@ def update_booking(
     special_price: float = 0.0,
     order_date: str | None = None,
     phone: str | None = None,
+    user=None,
 ) -> Order:
     """Create a order with items.
 
@@ -136,7 +137,7 @@ def update_booking(
         phone (str, optional): Phone number. Defaults to None.
     """
     ALLOW_UPDATE_ORDER = settings.ALLOW_EDIT_ORDER
-
+    
     booking = Order.objects.get(pk=pk)
     if booking.is_special_price:
         raise Exception(
@@ -145,6 +146,18 @@ def update_booking(
     booking.customer_name = customer_name
     booking.comment = comment
     booking.received_amount = received_amount
+    if booking.bill_number != bill_number:
+        try:
+            bill_book = BillBook.objects.prefetch_related("user").get(
+                book_number=math.ceil(bill_number / BILL_BOOK_SIZE)
+            )
+        except BillBook.DoesNotExist:
+            raise Exception(
+                f"Bill book {math.ceil(bill_number / BILL_BOOK_SIZE)} not found."
+            )
+        if bill_book.user.pk != user.pk:
+            raise Exception(f"Bill book {bill_book.book_number} is not assigned to you.")
+    
     booking.bill_number = bill_number
     if order_date:
         booking.date = datetime.strptime(order_date, "%Y-%m-%d")

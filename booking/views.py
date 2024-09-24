@@ -167,6 +167,7 @@ class EditOrderView(APIView):
                     data["special_note"],
                     order_date=data["order_date"],
                     phone=data.get("phone", None),
+                    user=request.user
                 )
                 
                 return Response("OK")
