@@ -32,7 +32,14 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     inlines = [OrderItemInline]
-    list_display = ["bill_number"]
+    list_display = [
+        "bill_number",
+        "customer_name",
+        "total_order_price",
+        "received_amount",
+        "is_special_price",
+        "created_at",
+    ]
     list_filter = (
         OrderDealerFilter,
         OrderBillBookFilter,

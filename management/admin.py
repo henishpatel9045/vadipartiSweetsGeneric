@@ -32,8 +32,10 @@ class ItemBaseAdmin(admin.ModelAdmin):
     inlines = [ItemInlineAdmin]
     list_display = [
         "name",
+        "stop_taking_order",
     ]
     search_fields = ["name"]
+    list_editable = ["stop_taking_order"]
 
 
 class OrderInlineAdmin(admin.TabularInline):
@@ -55,8 +57,13 @@ class BillBookAdmin(DjangoObjectActions, admin.ModelAdmin):
         "book_number",
         "user",
     ]
-    search_fields = ["book_number", "user__username",]
-    change_actions = ["print",]
+    search_fields = [
+        "book_number",
+        "user__username",
+    ]
+    change_actions = [
+        "print",
+    ]
 
     def print(self, request, obj: BillBook):
         return redirect(f"/bookings/print?type=book&pk={obj.book_number}")

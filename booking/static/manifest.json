@@ -1,0 +1,32 @@
+{
+  "name": "Vadiparti Sweets 2024",
+  "short_name": "Vadiparti Sweets 2024",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "840x840",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Order",
+      "url": "/bookings/new-order",
+      "description": "Create new order."
+    },
+    {
+      "name": "Orders",
+      "url": "/bookings/user/bookings",
+      "description": "View all orders."
+    },
+    {
+      "name": "Dashboard",
+      "url": "/admin-dashboard",
+      "description": "View dashboard."
+    }
+  ]
+}
