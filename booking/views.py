@@ -50,6 +50,7 @@ class NewOrderTemplateView(TemplateView):
                 item_data[pk] = {
                     "id": pk,
                     "title": item.base_item.name,
+                    "order_index": item.base_item.order_index,
                     "1000": {},
                     "500": {},
                 }
@@ -57,9 +58,9 @@ class NewOrderTemplateView(TemplateView):
                 "id": item.pk,
                 "price": item.price,
             }
-
+        item_data = sorted(list(item_data.values()), key=lambda x: x["order_index"])
         return {
-            "items_data": list(item_data.values()),
+            "items_data": item_data,
             "date": timezone.now().strftime("%Y-%m-%d"),
         }
 
@@ -129,6 +130,7 @@ class EditOrderTemplateView(TemplateView):
                 item_data[pk] = {
                     "id": pk,
                     "title": item.base_item.name,
+                    "order_index": item.base_item.order_index,
                     "1000": {},
                     "500": {},
                 }
@@ -140,7 +142,7 @@ class EditOrderTemplateView(TemplateView):
             }
 
         return {
-            "items_data": list(item_data.values()),
+            "items_data": sorted(list(item_data.values()), key=lambda x: x["order_index"]),
             "order": order,
             "order_number": order.bill_number,
             "order_date": order.date.strftime("%Y-%m-%d"),
@@ -464,10 +466,19 @@ class UserDashboardStatTemplateView(TemplateView):
         user_deposit = UserDeposits.objects.filter(user=user).aggregate(
             total_deposits=Sum("amount")
         )
-        
+
         return {
             "total_orders": total_summary.get("total_orders", 0),
             "total_received": total_summary.get("total_received", 0),
             "order_total": total_summary.get("user_total", 0),
             "user_deposit": user_deposit.get("total_deposits", 0) or 0,
         }
+
+
+class UserDepositsTemplateView(TemplateView):
+    template_name = "booking/user_deposits.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        user = self.request.user
+        deposits = UserDeposits.objects.filter(user=user)
+        return {"user_deposits": deposits}

@@ -33,9 +33,10 @@ class ItemBaseAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "stop_taking_order",
+        "order_index",
     ]
     search_fields = ["name"]
-    list_editable = ["stop_taking_order"]
+    list_editable = ["stop_taking_order", "order_index"]
 
 
 class OrderInlineAdmin(admin.TabularInline):
