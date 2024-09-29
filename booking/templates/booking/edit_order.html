@@ -200,13 +200,13 @@ Edit Order
             let input1000 = document.getElementById(`item_${item?.[1000]?.id}_1000`)?.value || 0;
             let input500 = document.getElementById(`item_${item?.[500]?.id}_500`)?.value || 0;
 
-            if (parseInt(input1000) > 0) {
+            if (item[1000]?.id && parseInt(input1000) >= 0) {
                 reqData.booking[item[1000].id] = {
                     id: item[1000].order_id,
                     quantity: parseInt(input1000)
                 };
             }
-            if (parseInt(input500) > 0) {
+            if (item[500]?.id && parseInt(input500) >= 0) {
                 reqData.booking[item[500].id] = {
                     id: item[500].order_id,
                     quantity: parseInt(input500)
@@ -226,7 +226,7 @@ Edit Order
             }).then(response => {
                 if (!response.ok) {
                     let data = response.json().then(data => {
-                        alert(`Failed to create order.\nError: ${data}`);
+                        alert(`Failed to update order.\nError: ${data}`);
                     })
                 } else {
                     window.location.href = "{% url 'edit-order-template' order.pk %}";

@@ -64,6 +64,7 @@ class BillBookAdmin(DjangoObjectActions, admin.ModelAdmin):
     change_actions = [
         "print",
     ]
+    autocomplete_fields = ["user"]
 
     def print(self, request, obj: BillBook):
         return redirect(f"/bookings/print?type=book&pk={obj.book_number}")
