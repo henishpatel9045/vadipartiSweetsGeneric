@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from booking.decorators import login_required
 from booking.models import Order, OrderItem
 from booking.utils import create_booking, delete_order, update_booking
-from management.models import Item
+from management.models import Item, UserDeposits
 from vadipartiSweets.constants import BOX_SIZE_MAPPING
 
 
@@ -28,12 +28,13 @@ def admin_home_redirect(request: HttpRequest) -> HttpResponse:
     if request.user.is_superuser:
         return redirect("/admin-home")
     return redirect("/bookings/user/bookings")
-        
+
 
 @login_required_func
 def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     return redirect("/admin")
+
 
 class NewOrderTemplateView(TemplateView):
     template_name = "booking/new_order.html"
@@ -57,7 +58,10 @@ class NewOrderTemplateView(TemplateView):
                 "price": item.price,
             }
 
-        return {"items_data": list(item_data.values()), "date": timezone.now().strftime("%Y-%m-%d")}
+        return {
+            "items_data": list(item_data.values()),
+            "date": timezone.now().strftime("%Y-%m-%d"),
+        }
 
 
 class CreateOrderView(APIView):
@@ -91,27 +95,30 @@ class CreateOrderView(APIView):
                 )
                 return Response("OK")
         except IntegrityError:
-            return Response(f"Order with order number {data['order_id']} already exists.", status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
             return Response(
-               str(e.args[0]), status=status.HTTP_400_BAD_REQUEST
+                f"Order with order number {data['order_id']} already exists.",
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        except Exception as e:
+            return Response(str(e.args[0]), status=status.HTTP_400_BAD_REQUEST)
 
 
 class EditOrderTemplateView(TemplateView):
     template_name = "booking/edit_order.html"
-    
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         pk = self.kwargs.get("pk")
         order = Order.objects.get(pk=pk)
-        order_items = OrderItem.objects.prefetch_related("booking", "item", "item__base_item").filter(booking=order)
+        order_items = OrderItem.objects.prefetch_related(
+            "booking", "item", "item__base_item"
+        ).filter(booking=order)
         tmp = {}
         for order_item in order_items:
             tmp[f"{order_item.item.base_item.pk}_{order_item.item.box_size}"] = {
                 "id": order_item.pk,
                 "quantity": order_item.order_quantity,
             }
-        
+
         items = Item.objects.prefetch_related("base_item").all()
         item_data = {}
         for item in items:
@@ -132,7 +139,16 @@ class EditOrderTemplateView(TemplateView):
                 "quantity": tmp.get(f"{pk}_{item.box_size}", {}).get("quantity", 0),
             }
 
-        return {"items_data": list(item_data.values()), "order": order, "order_number": order.bill_number, "order_date": order.date.strftime("%Y-%m-%d"), "customer_name": order.customer_name, "received_amount": order.received_amount, "special_note": order.comment,}
+        return {
+            "items_data": list(item_data.values()),
+            "order": order,
+            "order_number": order.bill_number,
+            "order_date": order.date.strftime("%Y-%m-%d"),
+            "customer_name": order.customer_name,
+            "received_amount": order.received_amount,
+            "special_note": order.comment,
+        }
+
 
 class EditOrderView(APIView):
     permission_classes = [IsAuthenticated]
@@ -144,9 +160,11 @@ class EditOrderView(APIView):
                 items = {}
                 for item in Item.objects.prefetch_related("base_item").all():
                     items[f"{item.pk}"] = item
-                
+
                 order = Order.objects.get(pk=pk)
-                order_items = OrderItem.objects.prefetch_related("booking", "item", "item__base_item").filter(booking=order)
+                order_items = OrderItem.objects.prefetch_related(
+                    "booking", "item", "item__base_item"
+                ).filter(booking=order)
                 tmp = {}
                 for order_item in order_items:
                     tmp[f"{order_item.pk}"] = order_item
@@ -155,8 +173,12 @@ class EditOrderView(APIView):
                 order_items = []
                 for item in booking_data.keys():
                     order_items.append(
-                        {"item": items[f"{item}"], "quantity": booking_data[item]["quantity"], "order_item": tmp.get(f"{booking_data[item]['id']}", None)}
-                    )            
+                        {
+                            "item": items[f"{item}"],
+                            "quantity": booking_data[item]["quantity"],
+                            "order_item": tmp.get(f"{booking_data[item]['id']}", None),
+                        }
+                    )
 
                 update_booking(
                     pk,
@@ -167,16 +189,17 @@ class EditOrderView(APIView):
                     data["special_note"],
                     order_date=data["order_date"],
                     phone=data.get("phone", None),
-                    user=request.user
+                    user=request.user,
                 )
-                
+
                 return Response("OK")
         except IntegrityError:
-            return Response(f"Order with order number {data['order_id']} already exists.", status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
             return Response(
-            str(e.args[0]), status=status.HTTP_400_BAD_REQUEST
+                f"Order with order number {data['order_id']} already exists.",
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        except Exception as e:
+            return Response(str(e.args[0]), status=status.HTTP_400_BAD_REQUEST)
 
 
 @login_required_func
@@ -184,7 +207,9 @@ def deleteOrderView(request: HttpRequest, pk: int) -> HttpResponse:
     try:
         print(request.method.lower() == "delete")
         if not request.method.lower() == "delete":
-            return HttpResponse("Method not allowed.", status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return HttpResponse(
+                "Method not allowed.", status=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
         delete_order(pk=pk, user=request.user)
         return HttpResponse("OK")
     except Order.DoesNotExist:
@@ -198,7 +223,7 @@ class UserBookingsTemplateView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = {}
-        
+
         search = self.request.GET.get("search", None)
 
         total_summary = (
@@ -234,21 +259,24 @@ class UserBookingsTemplateView(TemplateView):
                 else Order.objects.prefetch_related("book", "book__user").filter(
                     Q(bill_number__icontains=search)
                     | Q(customer_name__icontains=search)
-                    | Q(customer_phone__icontains=search))
+                    | Q(customer_phone__icontains=search)
                 )
+            )
         else:
             dealer_orders = (
-                Order.objects.prefetch_related("book", "book__user").filter(book__user=self.request.user)
+                Order.objects.prefetch_related("book", "book__user").filter(
+                    book__user=self.request.user
+                )
                 if self.request.user.is_superuser == False
                 else Order.objects.prefetch_related("book", "book__user").all()
             )
         paginator = Paginator(dealer_orders, 50)  # Create a Paginator object
         page_number = self.request.GET.get("page")
         page = paginator.get_page(page_number)
-       
+
         context = {"page": page, "total_summary": total_summary}
         return context
-    
+
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
@@ -256,35 +284,46 @@ class UserBookingsTemplateView(TemplateView):
 
 class OrdersPrintTemplateView(TemplateView):
     template_name = "booking/orders_print.html"
-    
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
         type: Literal["user", "book", "order"]
         pks=List[int]
         """
         context = {}
-        orders_type: Literal["user","book","order"] = self.request.GET.get("type")
+        orders_type: Literal["user", "book", "order"] = self.request.GET.get("type")
         pk = self.request.GET.get("pk")
-        
+
         if not orders_type or not pk:
-            return {
-                "title": "",
-                "type": "",
-                "orders_data": []
-            }
-        
+            return {"title": "", "type": "", "orders_data": []}
+
         # Get dict of order items with order pk as keys and the order item as values
         if orders_type == "user":
             context["type"] = "user"
             # orders = Order.objects.prefetch_related("book", "book__user").filter(book__user__pk=pk)
-            order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user", "item", "item__base_item").filter(booking__book__user__username=pk)
-            context["title"] = "User Orders for " + order_items[0].booking.book.user.username
+            order_items = OrderItem.objects.prefetch_related(
+                "booking",
+                "booking__book",
+                "booking__book__user",
+                "item",
+                "item__base_item",
+            ).filter(booking__book__user__username=pk)
+            context["title"] = (
+                "User Orders for " + order_items[0].booking.book.user.username
+            )
         else:
             context["type"] = "book"
             # orders = Order.objects.prefetch_related("book", "book__user").filter(book__pk=pk)
-            order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user", "item", "item__base_item").filter(booking__book__book_number=pk)
-            context["title"] = "Orders for Book Number " + str(order_items[0].booking.book.book_number)
-            
+            order_items = OrderItem.objects.prefetch_related(
+                "booking",
+                "booking__book",
+                "booking__book__user",
+                "item",
+                "item__base_item",
+            ).filter(booking__book__book_number=pk)
+            context["title"] = "Orders for Book Number " + str(
+                order_items[0].booking.book.book_number
+            )
 
         order_items_data = {}
         for order_item in order_items:
@@ -298,13 +337,20 @@ class OrdersPrintTemplateView(TemplateView):
                     "name": f"{order_item.item.base_item.name} - {BOX_SIZE_MAPPING[order_item.item.box_size]}",
                     "order_quantity": order_item.order_quantity,
                     "delivered_quantity": order_item.delivered_quantity,
-                    "remaining_quantity": order_item.order_quantity - order_item.delivered_quantity
+                    "remaining_quantity": order_item.order_quantity
+                    - order_item.delivered_quantity,
                 }
             else:
-                order_items_data[booking_id][item_pk]["order_quantity"] += order_item.order_quantity
-                order_items_data[booking_id][item_pk]["delivered_quantity"] += order_item.delivered_quantity
-                order_items_data[booking_id][item_pk]["remaining_quantity"] += order_item.order_quantity - order_item.delivered_quantity
-        
+                order_items_data[booking_id][item_pk][
+                    "order_quantity"
+                ] += order_item.order_quantity
+                order_items_data[booking_id][item_pk][
+                    "delivered_quantity"
+                ] += order_item.delivered_quantity
+                order_items_data[booking_id][item_pk]["remaining_quantity"] += (
+                    order_item.order_quantity - order_item.delivered_quantity
+                )
+
         orders_data = {}
         for order_item in order_items_data:
             try:
@@ -314,62 +360,114 @@ class OrdersPrintTemplateView(TemplateView):
                     orders_data[book_number] = {
                         "book_number": book_number,
                         "book_summary": {},
-                        "orders": []                        
+                        "orders": [],
                     }
-                orders_data[book_number]["orders"].append({
-                    "bill_number": order_item,
-                    "items": item_data
-                })
+                orders_data[book_number]["orders"].append(
+                    {"bill_number": order_item, "items": item_data}
+                )
                 for item in item_data:
                     if item not in orders_data[book_number]["book_summary"]:
                         orders_data[book_number]["book_summary"][item] = {
                             "name": item_data[item]["name"],
                             "order_quantity": item_data[item]["order_quantity"],
                             "delivered_quantity": item_data[item]["delivered_quantity"],
-                            "remaining_quantity": item_data[item]["remaining_quantity"]
+                            "remaining_quantity": item_data[item]["remaining_quantity"],
                         }
                     else:
-                        orders_data[book_number]["book_summary"][item]["order_quantity"] += item_data[item]["order_quantity"]
-                        orders_data[book_number]["book_summary"][item]["delivered_quantity"] += item_data[item]["delivered_quantity"]
-                        orders_data[book_number]["book_summary"][item]["remaining_quantity"] += item_data[item]["remaining_quantity"]
+                        orders_data[book_number]["book_summary"][item][
+                            "order_quantity"
+                        ] += item_data[item]["order_quantity"]
+                        orders_data[book_number]["book_summary"][item][
+                            "delivered_quantity"
+                        ] += item_data[item]["delivered_quantity"]
+                        orders_data[book_number]["book_summary"][item][
+                            "remaining_quantity"
+                        ] += item_data[item]["remaining_quantity"]
             except Exception as e:
                 print(e)
-    
+
         orders_data = list(orders_data.values())
-        orders_data = [{
-            "book_number": order["book_number"],
-            "book_summary": list(order["book_summary"].values()),
-            "orders": sorted(order["orders"], key=lambda x: int(x["bill_number"]))
-        } for order in orders_data]
-        orders_data = [{
-            **order,
-            "orders": [{
-                "bill_number": single_order["bill_number"],
-                "items": list(single_order["items"].values())
-                } for single_order in order["orders"]]
-        } for order in orders_data]
-        
+        orders_data = [
+            {
+                "book_number": order["book_number"],
+                "book_summary": list(order["book_summary"].values()),
+                "orders": sorted(order["orders"], key=lambda x: int(x["bill_number"])),
+            }
+            for order in orders_data
+        ]
+        orders_data = [
+            {
+                **order,
+                "orders": [
+                    {
+                        "bill_number": single_order["bill_number"],
+                        "items": list(single_order["items"].values()),
+                    }
+                    for single_order in order["orders"]
+                ],
+            }
+            for order in orders_data
+        ]
+
         orders_data.sort(key=lambda x: int(x["book_number"]))
         context["orders_data"] = orders_data
         return context
-    
+
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         req_type = request.GET.get("type")
         try:
             return super().get(request, *args, **kwargs)
         except IndexError as e:
-            return render(request, "message_page.html", {"type": "error", "message": f"No order exists for given {req_type}."})
+            return render(
+                request,
+                "message_page.html",
+                {"type": "error", "message": f"No order exists for given {req_type}."},
+            )
         except Exception as e:
-            return render(request, "message_page.html", {"type": "error", "message": str(e.args[0])})
+            return render(
+                request,
+                "message_page.html",
+                {"type": "error", "message": str(e.args[0])},
+            )
 
 
 class AdminHomeTemplateView(TemplateView):
     template_name = "admin_home.html"
-    
+
+
 class AdminDashboardTemplateView(TemplateView):
     template_name = "admin_dashboard.html"
-    
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        return {"dashboard_embed_url": settings.DASHBOARD_EMBED_URL}
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not request.user.is_superuser:
+            return HttpResponse("Unauthorized", status=status.HTTP_401_UNAUTHORIZED)
+        return super().get(request, *args, **kwargs)
+
+
+class UserDashboardStatTemplateView(TemplateView):
+    template_name = "booking/user_stats.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        user = self.request.user
+        total_summary = (
+            Order.objects.prefetch_related("book", "book__user")
+            .filter(book__user=user)
+            .aggregate(
+                user_total=Sum("total_order_price"),
+                total_orders=Count("pk"),
+                total_received=Sum("received_amount"),
+            )
+        )
+        user_deposit = UserDeposits.objects.filter(user=user).aggregate(
+            total_deposits=Sum("amount")
+        )
+        
         return {
-            "dashboard_embed_url": settings.DASHBOARD_EMBED_URL
+            "total_orders": total_summary.get("total_orders", 0),
+            "total_received": total_summary.get("total_received", 0),
+            "order_total": total_summary.get("user_total", 0),
+            "user_deposit": user_deposit.get("total_deposits", 0) or 0,
         }

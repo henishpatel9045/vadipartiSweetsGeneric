@@ -1,0 +1,64 @@
+{% extends 'booking/user_base.html' %} {% block title %}User Stats{% endblock %}
+{% block child_content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-3">
+      <div class="card text-white bg-primary mb-3">
+       
+        <div class="card-body">
+          <h5 class="card-title">Total Orders</h5>
+          <p class="card-text">
+            {{ total_orders }}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-primary mb-3">
+       
+        <div class="card-body">
+          <h5 class="card-title">Total Order Amount</h5>
+          <p class="card-text" id="total-order-amount-box">
+            
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-primary mb-3">
+       
+        <div class="card-body">
+          <h5 class="card-title">Total Received Amount</h5>
+          <p class="card-text" id="total-received-box">
+            
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+         
+          <div class="card-body">
+            <h5 class="card-title">Total Deposited Amount</h5>
+            <p class="card-text" id="user-deposit-box">
+               
+            </p>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
+
+<script>
+
+    let totalOrderAmount = document.getElementById('total-order-amount-box');
+    let totalReceivedAmount = document.getElementById('total-received-box');
+    let userDepositAmount = document.getElementById('user-deposit-box');
+    
+    totalOrderAmount.innerHTML = Number.parseFloat({{order_total}}).toLocaleString() + ' INR';
+    totalReceivedAmount.innerHTML = Number.parseFloat({{total_received}}).toLocaleString() + ' INR';
+    userDepositAmount.innerHTML = Number.parseFloat({{user_deposit}}).toLocaleString() + ' INR';
+
+</script>
+
+{% endblock %}

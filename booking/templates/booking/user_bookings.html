@@ -16,7 +16,7 @@
   <div class="row mb-3 flex justify-content-end" style="row-gap: 0.5rem;">
     <div class="col-12 col-lg-6" style="text-align: left; background-color">
       <span style="font-size: 1.5rem; font-weight: bold;">Total: </span>
-      <span style="font-size: 1.5rem; font-weight: bold; color: green;"">{{total_summary.user_total}} ₹ <a href="" style="font-size: 1rem;" class="btn-xs btn-link">See more</a></span>
+      <span style="font-size: 1.5rem; font-weight: bold; color: green;"">{{total_summary.user_total}} ₹ <a href="{% url 'user-stats' %}" style="font-size: 1rem;" class="btn-xs btn-link">See more</a></span>
     </div>
     <div class="col-12 col-lg-6">
       <form class="input-group" method="get">

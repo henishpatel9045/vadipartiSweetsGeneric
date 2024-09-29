@@ -8,6 +8,7 @@ from booking.views import (
     UserBookingsTemplateView,
     deleteOrderView,
     OrdersPrintTemplateView,
+    UserDashboardStatTemplateView,
 )
 
 
@@ -18,5 +19,6 @@ urlpatterns = [
     path("order/<str:pk>/edit/", EditOrderView.as_view(), name="edit-order"),
     path("order/<str:pk>/delete/", deleteOrderView, name="delete-order"),
     path("user/bookings", UserBookingsTemplateView.as_view(), name="user-bookings"),
+    path("user/stats", UserDashboardStatTemplateView.as_view(), name="user-stats"),
     path("print", OrdersPrintTemplateView.as_view(), name="booking-print"),
 ]
