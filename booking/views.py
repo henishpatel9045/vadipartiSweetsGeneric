@@ -468,9 +468,9 @@ class UserDashboardStatTemplateView(TemplateView):
         )
 
         return {
-            "total_orders": total_summary.get("total_orders", 0),
-            "total_received": total_summary.get("total_received", 0),
-            "order_total": total_summary.get("user_total", 0),
+            "total_orders": total_summary.get("total_orders", 0) or 0,
+            "total_received": total_summary.get("total_received", 0) or 0,
+            "order_total": total_summary.get("user_total", 0) or 0,
             "user_deposit": user_deposit.get("total_deposits", 0) or 0,
         }
 

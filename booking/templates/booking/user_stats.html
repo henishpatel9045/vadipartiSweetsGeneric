@@ -1,10 +1,19 @@
 {% extends 'booking/user_base.html' %} {% block title %}User Stats{% endblock %}
+
+{% block page_title %}
+    User Stats
+{% endblock %}
+
 {% block child_content %}
-<div class="container mt-5">
+
+<div class="container mt-1">
+  <div class="w-100 p-2" style="text-align: left;">
+    <a href="{% url 'user-deposits' %}" style="font-size: 1rem; font-weight: 900;" class="btn-xs btn-link">User Deposits</a>
+  </div>
   <div class="row">
     <div class="col-md-3">
       <div class="card text-white bg-primary mb-3">
-       
+
         <div class="card-body">
           <h5 class="card-title">Total Orders</h5>
           <p class="card-text">
@@ -15,49 +24,49 @@
     </div>
     <div class="col-md-3">
       <div class="card text-white bg-primary mb-3">
-       
+
         <div class="card-body">
           <h5 class="card-title">Total Order Amount</h5>
           <p class="card-text" id="total-order-amount-box">
-            
+
           </p>
         </div>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-white bg-primary mb-3">
-       
+
         <div class="card-body">
           <h5 class="card-title">Total Received Amount</h5>
           <p class="card-text" id="total-received-box">
-            
+
           </p>
         </div>
       </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-         
-          <div class="card-body">
-            <h5 class="card-title">Total Deposited Amount</h5>
-            <p class="card-text" id="user-deposit-box">
-               
-            </p>
-          </div>
+      <div class="card text-white bg-primary mb-3">
+
+        <div class="card-body">
+          <h5 class="card-title">Total Deposited Amount</h5>
+          <p class="card-text" id="user-deposit-box">
+
+          </p>
         </div>
       </div>
+    </div>
   </div>
 </div>
 
 <script>
 
-    let totalOrderAmount = document.getElementById('total-order-amount-box');
-    let totalReceivedAmount = document.getElementById('total-received-box');
-    let userDepositAmount = document.getElementById('user-deposit-box');
-    
-    totalOrderAmount.innerHTML = Number.parseFloat({{order_total}}).toLocaleString() + ' INR';
-    totalReceivedAmount.innerHTML = Number.parseFloat({{total_received}}).toLocaleString() + ' INR';
-    userDepositAmount.innerHTML = Number.parseFloat({{user_deposit}}).toLocaleString() + ' INR';
+  let totalOrderAmount = document.getElementById('total-order-amount-box');
+  let totalReceivedAmount = document.getElementById('total-received-box');
+  let userDepositAmount = document.getElementById('user-deposit-box');
+
+  totalOrderAmount.innerHTML = (Number.parseFloat({{ order_total }}).toLocaleString() || 0) + ' INR';
+  totalReceivedAmount.innerHTML = (Number.parseFloat({{ total_received }}).toLocaleString() || 0) + ' INR';
+  userDepositAmount.innerHTML = (Number.parseFloat({{ user_deposit }}).toLocaleString() || 0) + ' INR';
 
 </script>
 

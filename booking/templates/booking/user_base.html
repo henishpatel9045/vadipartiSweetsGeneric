@@ -6,11 +6,11 @@
 <div style="min-width: 100vw; min-height: 100vh; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
   <nav class="navbar navbar-expand-lg navbar-light bg-light ps-2 pe-2" style="width: 100%;">
     <a class="navbar-brand fw-bolder" style="color: black" href="#">
-      {% if user.is_superuser %}
+      
+      {% block page_title %}
         Vadiparti Sweets 2024
-      {% else %}
-        My Orders
-      {% endif %}
+      {% endblock %}
+        
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,34 +21,40 @@
         
         {% if user.is_superuser %}
         <li class="nav-item">
-          <span class="nav-link font-weight-bold"><b>Welcome, {{ user.username }}</b></span>
+          <span class="nav-link fw-bold active"><b>Welcome, {{ user.username }}</b></span>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="/home">Home</a>
+          <a class="nav-link fw-bold" href="/home">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="/admin">Admin</a>
+          <a class="nav-link fw-bold" href="/admin">Admin</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="/logout">Logout</a>
+          <a class="nav-link fw-bold" href="/logout">Logout</a>
         </li>
           
         {% elif user.is_authenticated %}
         <li class="nav-item">
-          <span class="nav-link font-weight-bold">Welcome, {{ user.username }}</span>
+          <span class="nav-link fw-bold active">Welcome, {{ user.username }}</span>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="{% url 'user-bookings' %}">Home</a>
+          <a class="nav-link fw-bold" href="{% url 'user-bookings' %}">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="{% url 'new-order' %}">Add Order</a>
+          <a class="nav-link fw-bold" href="{% url 'new-order' %}">Add Order</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="/logout">Logout</a>
+          <a class="nav-link fw-bold" href="{% url 'user-stats' %}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-bold" href="{% url 'user-deposits' %}">Deposits</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-bold" href="/logout">Logout</a>
         </li>
         {% elif not user.is_authenticated %}
         <li class="nav-item">
-          <a class="nav-link font-weight-bold" href="/admin">Login</a>
+          <a class="nav-link fw-bold" href="/admin">Login</a>
         </li>
         {% endif %}
       </ul>
