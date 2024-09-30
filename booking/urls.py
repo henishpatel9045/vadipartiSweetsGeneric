@@ -10,6 +10,7 @@ from booking.views import (
     OrdersPrintTemplateView,
     UserDashboardStatTemplateView,
     UserDepositsTemplateView,
+    UserOrderDeliveryStatusTemplateView,
 )
 
 
@@ -22,5 +23,6 @@ urlpatterns = [
     path("user/bookings", UserBookingsTemplateView.as_view(), name="user-bookings"),
     path("user/stats", UserDashboardStatTemplateView.as_view(), name="user-stats"),
     path("user/deposits", UserDepositsTemplateView.as_view(), name="user-deposits"),
+    path("user/orders-delivery", UserOrderDeliveryStatusTemplateView.as_view(), name="user-order-delivery"),
     path("print", OrdersPrintTemplateView.as_view(), name="booking-print"),
 ]

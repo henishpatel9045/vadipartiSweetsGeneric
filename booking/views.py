@@ -63,6 +63,10 @@ class NewOrderTemplateView(TemplateView):
             "items_data": item_data,
             "date": timezone.now().strftime("%Y-%m-%d"),
         }
+    
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().get(request, *args, **kwargs)
 
 
 class CreateOrderView(APIView):
@@ -142,7 +146,9 @@ class EditOrderTemplateView(TemplateView):
             }
 
         return {
-            "items_data": sorted(list(item_data.values()), key=lambda x: x["order_index"]),
+            "items_data": sorted(
+                list(item_data.values()), key=lambda x: x["order_index"]
+            ),
             "order": order,
             "order_number": order.bill_number,
             "order_date": order.date.strftime("%Y-%m-%d"),
@@ -150,6 +156,10 @@ class EditOrderTemplateView(TemplateView):
             "received_amount": order.received_amount,
             "special_note": order.comment,
         }
+    
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().get(request, *args, **kwargs)
 
 
 class EditOrderView(APIView):
@@ -163,10 +173,9 @@ class EditOrderView(APIView):
                 for item in Item.objects.prefetch_related("base_item").all():
                     items[f"{item.pk}"] = item
 
-                order = Order.objects.get(pk=pk)
                 order_items = OrderItem.objects.prefetch_related(
                     "booking", "item", "item__base_item"
-                ).filter(booking=order)
+                ).filter(booking_id=pk)
                 tmp = {}
                 for order_item in order_items:
                     tmp[f"{order_item.pk}"] = order_item
@@ -473,6 +482,10 @@ class UserDashboardStatTemplateView(TemplateView):
             "order_total": total_summary.get("user_total", 0) or 0,
             "user_deposit": user_deposit.get("total_deposits", 0) or 0,
         }
+        
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().get(request, *args, **kwargs)
 
 
 class UserDepositsTemplateView(TemplateView):
@@ -480,5 +493,92 @@ class UserDepositsTemplateView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         user = self.request.user
+        total_order_amount = Order.objects.filter(book__user=user).aggregate(
+            total_order_amount=Sum("total_order_price")
+        ).get("total_order_amount", 0) or 0
         deposits = UserDeposits.objects.filter(user=user)
-        return {"user_deposits": deposits}
+        total_deposit = 0
+        for deposit in deposits:
+            total_deposit += deposit.amount
+        return {"user_deposits": deposits, "total_order_amount": total_order_amount, "total_deposit_received": total_deposit}
+
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().get(request, *args, **kwargs)
+    
+
+class UserOrderDeliveryStatusTemplateView(TemplateView):
+    template_name = "booking/user_order_delivery_status.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = {}
+
+        order_items = OrderItem.objects.prefetch_related(
+            "booking",
+            "booking__book",
+            "booking__book__user",
+            "item",
+            "item__base_item",
+        ).filter(booking__book__user=self.request.user)
+
+        order_items_data = {}
+        for order_item in order_items:
+            booking_id = str(order_item.booking.bill_number)
+            if booking_id not in order_items_data:
+                order_items_data[booking_id] = {}
+            item_pk = str(order_item.item.pk)
+            if item_pk not in order_items_data[booking_id]:
+                order_items_data[booking_id][item_pk] = {
+                    "book_number": order_item.booking.book.book_number,
+                    "name": f"{order_item.item.base_item.name} - {BOX_SIZE_MAPPING[order_item.item.box_size]}",
+                    "order_quantity": order_item.order_quantity,
+                    "delivered_quantity": order_item.delivered_quantity,
+                    "remaining_quantity": order_item.order_quantity
+                    - order_item.delivered_quantity,
+                }
+            else:
+                order_items_data[booking_id][item_pk][
+                    "order_quantity"
+                ] += order_item.order_quantity
+                order_items_data[booking_id][item_pk][
+                    "delivered_quantity"
+                ] += order_item.delivered_quantity
+                order_items_data[booking_id][item_pk]["remaining_quantity"] += (
+                    order_item.order_quantity - order_item.delivered_quantity
+                )
+
+        orders_data = []
+        for order_item in order_items_data:
+            orders_data.append(
+                {
+                    "bill_number": order_item,
+                    "items": list(order_items_data[order_item].values()),
+                }
+            )
+        
+        orders_data = sorted(orders_data, key=lambda x: int(x["bill_number"]))
+        context["orders_data"] = orders_data
+        return context
+
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.request.user.is_staff:
+            return render(
+                request,
+                "message_page.html",
+                {"type": "error", "message": "User not found."},
+            )
+        try:
+            return super().get(request, *args, **kwargs)
+        except IndexError as e:
+            return render(
+                request,
+                "message_page.html",
+                {"type": "error", "message": f"No order exists for given user."},
+            )
+        except Exception as e:
+            return render(
+                request,
+                "message_page.html",
+                {"type": "error", "message": str(e.args[0])},
+            )

@@ -50,7 +50,10 @@
           <a class="nav-link fw-bold" href="{% url 'user-deposits' %}">Deposits</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link fw-bold" href="/logout">Logout</a>
+          <a class="nav-link fw-bold" href="{% url 'user-order-delivery' %}">Order Delivery Status</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-bold link-danger" href="/logout">Logout</a>
         </li>
         {% elif not user.is_authenticated %}
         <li class="nav-item">

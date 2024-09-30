@@ -1,0 +1,54 @@
+{% extends 'booking/user_base.html' %}
+
+{% block title %}
+    User Order Delivery Status
+{% endblock %}
+
+{% block page_title %}
+    User Order Delivery Status
+{% endblock %}
+    
+{% block child_content %}
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Order Delivery Status</h2>
+                <table class="w-100 table table-responsive table-hover table-bordered table-dark">
+                    <thead>
+                        <tr>
+                            <th class="title">Item</th>
+                            <th class="title">Ordered Quantity</th>
+                            <th class="title">Delivered Quantity</th>
+                            <th class="title">Remaining Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders_data %}
+                            <tr>
+                                <td colspan="4" class="title">Order: {{order.bill_number}}</td>
+                            </tr>
+                            {% for order_item in order.items %}
+                            <tr>
+                                <td>{{order_item.name}}</td>
+                                <td style="text-align: center;">{{order_item.order_quantity}}</td>
+                                <td style="text-align: center;">{{order_item.delivered_quantity}}</td>
+                                <td style="text-align: center;">{{order_item.remaining_quantity}}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if not forloop.last %}
+                            <tr style="background-color: white;">
+                                <td colspan="4" style="background-color: white;"></td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+            
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+    

@@ -5,15 +5,41 @@
     User Deposits
 {% endblock %}
 {% block child_content %}
-<div class="container mt-5">
-    <div class="accordion" id="accordionExample">
+<div class="container mt-1">
+    
 
 
         {% if not user_deposits %}
         <h2 class="w-100 text-center badge bg-danger" style="font-size: 1.5rem;">No Deposits Found</h2>
         {% endif %}
-
-
+        
+        <div class="container mt-1">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+          
+                  <div class="card-body">
+                    <h5 class="card-title">Total Order Amount</h5>
+                    <p class="card-text" id="total-order-amount-box">
+                      
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+          
+                  <div class="card-body">
+                    <h5 class="card-title">Total Deposited Amount</h5>
+                    <p class="card-text" id="total-deposited-amount-box">
+                        
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <div class="accordion" id="accordionExample">
         {% for deposit in user_deposits %}
         <div class="accordion-item">
             <h2 class="accordion-header"   id="heading-{{forloop.counter}}">
@@ -44,5 +70,13 @@
 
     </div>
 </div>
+
+<script>
+    let totalOrderAmount = document.getElementById('total-order-amount-box');
+    let totalReceivedAmount = document.getElementById('total-deposited-amount-box');
+
+    totalOrderAmount.innerHTML = (Number.parseFloat({{ total_order_amount }}).toLocaleString() || 0) + ' INR';
+    totalReceivedAmount.innerHTML = (Number.parseFloat({{total_deposit_received}}).toLocaleString() || 0) + ' INR';
+</script>
 
 {% endblock %}
