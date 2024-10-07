@@ -146,6 +146,14 @@ class AdminDashboardAPIView(APIView):
             items_quantity[item_name]["box_quantity"][item_box]["ready_quantity"] += ready_item.quantity
 
         dealer_wise_data = {}
+        for user in users:
+            dealer_name = user.username
+            dealer_wise_data[dealer_name] = {
+                "full_name": user.get_full_name(),
+                "total_order": 0,
+                "total_order_amount": 0,
+                "total_deposit": 0,
+            }
         for bill_book in bill_book_queryset:
             dealer_name = bill_book.user.username
             if dealer_name not in dealer_wise_data:
@@ -173,15 +181,6 @@ class AdminDashboardAPIView(APIView):
             dealer_wise_data[dealer_name][
                 "total_order_amount"
             ] += order.total_order_price
-
-        for user in users:
-            dealer_name = user.username
-            dealer_wise_data[dealer_name] = {
-                    "full_name": user.get_full_name(),
-                    "total_order": 0,
-                    "total_order_amount": 0,
-                    "total_deposit": 0,
-                }
 
         total_deposit_amount = 0
         for user_deposit in user_deposit_queryset:
