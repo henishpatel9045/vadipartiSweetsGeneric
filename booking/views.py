@@ -20,7 +20,7 @@ from booking.decorators import login_required
 from booking.models import Order, OrderItem
 from booking.utils import create_booking, delete_order, update_booking
 from management.models import Item, UserDeposits
-from vadipartiSweets.constants import BOX_SIZE_MAPPING
+from vadipartiSweets.utils import convert_number_to_weight
 
 
 @login_required_func
@@ -345,7 +345,7 @@ class OrdersPrintTemplateView(TemplateView):
             if item_pk not in order_items_data[booking_id]:
                 order_items_data[booking_id][item_pk] = {
                     "book_number": order_item.booking.book.book_number,
-                    "name": f"{order_item.item.base_item.name} - {BOX_SIZE_MAPPING[order_item.item.box_size]}",
+                    "name": f"{order_item.item.base_item.name} ({convert_number_to_weight(order_item.item.box_size)})",
                     "order_quantity": order_item.order_quantity,
                     "delivered_quantity": order_item.delivered_quantity,
                     "remaining_quantity": order_item.order_quantity
@@ -530,7 +530,7 @@ class UserOrderDeliveryStatusTemplateView(TemplateView):
             if item_pk not in order_items_data[booking_id]:
                 order_items_data[booking_id][item_pk] = {
                     "book_number": order_item.booking.book.book_number,
-                    "name": f"{order_item.item.base_item.name} - {BOX_SIZE_MAPPING[order_item.item.box_size]}",
+                    "name": f"{order_item.item.base_item.name} - {convert_number_to_weight(order_item.item.box_size)}",
                     "order_quantity": order_item.order_quantity,
                     "delivered_quantity": order_item.delivered_quantity,
                     "remaining_quantity": order_item.order_quantity

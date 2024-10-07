@@ -3,9 +3,10 @@ from io import BytesIO
 import xlsxwriter
 import xlsxwriter.worksheet
 
-from booking.models import Order, OrderItem
-from management.models import Item, BillBook
-from vadipartiSweets.constants import BOX_SIZE_MAPPING
+from booking.models import OrderItem
+from management.models import Item
+from vadipartiSweets.utils import convert_number_to_weight
+
 
 User = get_user_model()
 
@@ -64,7 +65,7 @@ def write_orders_data(
             title_items[item["base_item__name"]].append(int(item["box_size"]))
     title_items = {k: sorted(v) for k, v in title_items.items()}
     title_items = [
-        (k, [BOX_SIZE_MAPPING[str(i)] for i in v]) for k, v in title_items.items()
+        (k, [convert_number_to_weight(i) for i in v]) for k, v in title_items.items()
     ]
 
     DATA_CELL_FORMAT = excel_file.add_format(
@@ -202,7 +203,7 @@ def export_data(queryset, worksheet, excel_file, output):
                 "amount_received": order.booking.received_amount,
             }
         item_name = order.item.base_item.name
-        size = BOX_SIZE_MAPPING[str(order.item.box_size)]
+        size = convert_number_to_weight(order.item.box_size)
         order_data[order.booking_id]["items"][
             f"{item_name} {size}"
         ] = order.order_quantity

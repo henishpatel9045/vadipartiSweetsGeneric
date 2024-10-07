@@ -8,10 +8,11 @@ from rest_framework.response import Response
 import json
 
 from export.export import export_all_data, export_user_data
-from vadipartiSweets.constants import BOX_SIZE_MAPPING
+from vadipartiSweets.utils import convert_number_to_weight
 from .forms import ConfigForm
 from booking.models import Order, OrderItem
 from .models import BillBook, UserDeposits, DailyReadyItem
+from custom_auth.models import User
 
 # Create your views here.
 
@@ -73,6 +74,7 @@ def download_excel(request):
 class AdminDashboardAPIView(APIView):
     def get(self, request):
         user_deposit_queryset = UserDeposits.objects.prefetch_related("user").all()
+        users = User.objects.filter(is_superuser=False)
         order_item_queryset = OrderItem.objects.prefetch_related(
             "item", "item__base_item", "booking", "booking__book", "booking__book__user"
         ).all()
@@ -172,15 +174,18 @@ class AdminDashboardAPIView(APIView):
                 "total_order_amount"
             ] += order.total_order_price
 
-        total_deposit_amount = 0
-        for user_deposit in user_deposit_queryset:
-            dealer_name = user_deposit.user.username
-            if dealer_name not in dealer_wise_data:
-                dealer_wise_data[dealer_name] = {
+        for user in users:
+            dealer_name = user.username
+            dealer_wise_data[dealer_name] = {
+                    "full_name": user.get_full_name(),
                     "total_order": 0,
                     "total_order_amount": 0,
                     "total_deposit": 0,
                 }
+
+        total_deposit_amount = 0
+        for user_deposit in user_deposit_queryset:
+            dealer_name = user_deposit.user.username
             dealer_wise_data[dealer_name]["total_deposit"] += user_deposit.amount
             total_deposit_amount += user_deposit.amount
 
@@ -188,6 +193,7 @@ class AdminDashboardAPIView(APIView):
             {"dealer": dealer_name, **data}
             for dealer_name, data in dealer_wise_data.items()
         ]
+        
         dealer_wise_data = sorted(
             dealer_wise_data, key=lambda x: x["total_order_amount"], reverse=True
         )
@@ -200,7 +206,7 @@ class AdminDashboardAPIView(APIView):
                 item_box_data = items_quantity[item]["box_quantity"][item_box]
                 item_box_wise_table_data.append(
                     {
-                        "item": f"{item} - {BOX_SIZE_MAPPING[str(item_box)]}",
+                        "item": f"{item} - {convert_number_to_weight(item_box)}",
                         "order_quantity": item_box_data["order_quantity"],
                         "delivered_quantity": item_box_data["delivered_quantity"],
                         "ready_quantity": item_box_data["ready_quantity"],

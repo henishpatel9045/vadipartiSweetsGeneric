@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from vadipartiSweets.constants import BILL_BOOK_SIZE, BOX_SIZES
+from vadipartiSweets.constants import BILL_BOOK_SIZE
 
 
 # Create your models here.
@@ -23,7 +23,7 @@ class Item(models.Model):
     base_item = models.ForeignKey(
         ItemBase, on_delete=models.CASCADE, related_name="variants"
     )
-    box_size = models.CharField(max_length=20, choices=BOX_SIZES)
+    box_size = models.CharField(max_length=20, help_text="Box size in grams i.e. for 500gms, enter 500, for 1kg, enter 1000.")
     price = models.FloatField(default=0.0)
 
     def __str__(self):
