@@ -2,14 +2,14 @@
 <div class="w-full">
   {% if user.is_superuser %}
   <div class="row mb-3 flex justify-content-between mx-1">
-    <h1 style="font-size: 2rem">Orders</h1>
+    <h1 style="font-size: 2rem">My Orders</h1>
     <button class="btn btn-success text-white font-weight-bold p-1" style="font-size: 1.2rem"
       onclick="downloadExcel();">
       Download Excel
     </button>
   </div>
   {% else %}
-  <h1 style="font-size: 1.5rem;">Your Orders</h1>
+  <h1 style="font-size: 1.5rem;">My Orders</h1>
 
   {% endif %}
 
@@ -117,6 +117,14 @@
     </nav>
   </div>
 </div>
+
+<a href="/bookings/new-order" class="btn btn-lg btn-success" 
+style="position: fixed; bottom: 4rem; right: 1rem; text-align: center; vertical-align: middle;
+       font-weight: bolder; z-index: 1000; 
+       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+ Add Order
+</a>
+
 <script>
   const deleteOrder = (orderId) => {
     if (confirm(`Are you sure to delete order #${orderId}?`)) {
