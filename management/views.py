@@ -153,16 +153,17 @@ class AdminDashboardAPIView(APIView):
                 "total_order": 0,
                 "total_order_amount": 0,
                 "total_deposit": 0,
+                "books": [],
             }
         for bill_book in bill_book_queryset:
             dealer_name = bill_book.user.username
-            if dealer_name not in dealer_wise_data:
-                dealer_wise_data[dealer_name] = {
-                    "total_order": 0,
-                    "total_order_amount": 0,
-                    "total_deposit": 0,
-                    "books": [],
-                }
+            # if dealer_name not in dealer_wise_data:
+            #     dealer_wise_data[dealer_name] = {
+            #         "total_order": 0,
+            #         "total_order_amount": 0,
+            #         "total_deposit": 0,
+            #         "books": [],
+            #     }
             dealer_wise_data[dealer_name]["books"].append(bill_book.book_number)
 
         total_orders = 0
@@ -171,12 +172,12 @@ class AdminDashboardAPIView(APIView):
             total_orders += 1
             total_order_amount += order.total_order_price
             dealer_name = order.book.user.username
-            if dealer_name not in dealer_wise_data:
-                dealer_wise_data[dealer_name] = {
-                    "total_order": 0,
-                    "total_order_amount": 0,
-                    "total_deposit": 0,
-                }
+            # if dealer_name not in dealer_wise_data:
+            #     dealer_wise_data[dealer_name] = {
+            #         "total_order": 0,
+            #         "total_order_amount": 0,
+            #         "total_deposit": 0,
+            #     }
             dealer_wise_data[dealer_name]["total_order"] += 1
             dealer_wise_data[dealer_name][
                 "total_order_amount"
