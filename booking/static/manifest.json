@@ -1,7 +1,7 @@
 {
   "name": "Vadiparti Sweets 2024",
   "short_name": "Vadiparti Sweets 2024",
-  "start_url": "/admin",
+  "start_url": "/home",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
