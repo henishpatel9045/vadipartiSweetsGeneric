@@ -16,14 +16,14 @@ from rest_framework.request import Request
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from booking.decorators import login_required
+from booking.decorators import login_required, login_required_func as login_required_single
 from booking.models import Order, OrderItem
 from booking.utils import create_booking, delete_order, update_booking
 from management.models import Item, UserDeposits
 from vadipartiSweets.utils import convert_number_to_weight
 
 
-@login_required_func
+@login_required_single
 def admin_home_redirect(request: HttpRequest) -> HttpResponse:
     if request.user.is_superuser:
         return redirect("/admin-home")
@@ -444,6 +444,10 @@ class OrdersPrintTemplateView(TemplateView):
 
 class AdminHomeTemplateView(TemplateView):
     template_name = "admin_home.html"
+    
+    @login_required
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().get(request, *args, **kwargs)
 
 
 class AdminDashboardTemplateView(TemplateView):
