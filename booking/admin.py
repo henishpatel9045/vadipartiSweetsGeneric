@@ -4,10 +4,11 @@ from django.db import transaction, models
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django_object_actions import DjangoObjectActions
+from django.utils.html import format_html
 
 from booking.utils import update_price_of_booking
 from .models import Order, OrderItem
-from .filters import OrderDealerFilter, OrderBillBookFilter
+from .filters import OrderDealerFilter, OrderBillBookFilter, OrderCommentFilter
 
 # Register your models here.
 
@@ -38,11 +39,13 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "total_order_price",
         "received_amount",
         "is_special_price",
+        "has_comment",
         "created_at",
     ]
     list_filter = (
         OrderDealerFilter,
         OrderBillBookFilter,
+        OrderCommentFilter,
         "is_special_price",
     )
     change_actions = [
@@ -51,6 +54,15 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
     ]
     actions = ["full_dispatch_changelist", "update_order_total_price_changelist"]
     search_fields = ["bill_number", "customer_name", "customer_phone"]
+
+    def has_comment(self, obj: Order) -> bool:
+        if bool(obj.comment):
+            return format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">'
+            )
+        return format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="False">'
+            )
 
     def full_dispatch(self, request: HttpRequest, obj: Order) -> None:
         try:

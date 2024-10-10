@@ -2,11 +2,26 @@ from django.contrib import admin
 from datetime import datetime
 from django.contrib.auth import get_user_model
 
-from booking.models import Order, OrderItem
-from management.models import BillBook, Item
-
 User = get_user_model()
 
+
+class OrderCommentFilter(admin.SimpleListFilter):
+    title = "Has Comment"
+    parameter_name = "has_comment"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("1", "Yes"),
+            ("0", "No"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "1":
+            return queryset.exclude(comment="")
+        if self.value() == "0":
+            return queryset.filter(comment="")
+        return queryset
+    
 
 class InputFilter(admin.SimpleListFilter):
     template = "admin/input_filter.html"
