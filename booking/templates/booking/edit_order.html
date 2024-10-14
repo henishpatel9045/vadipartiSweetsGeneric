@@ -92,7 +92,7 @@ Edit Order
                 <tr>
                     <td colspan="2" class="text-end">Total</td>
                     <td colspan="2"><input type="text" class="form-control currency-suffix text-end text-bg-success"
-                            id="total-amount" readonly></td>
+                            id="total-amount" value="{{order.total_order_price}}" readonly></td>
                 </tr>
                 <tr>
                     <td colspan="2" class="text-end">Amount Received</td>
@@ -184,7 +184,7 @@ Edit Order
             })
         }
         calculateTotal(item, price1000, price500);
-        calculateOrderTotal();
+        // calculateOrderTotal();
     }
 
     const itemsData = {{ items_data| safe }};

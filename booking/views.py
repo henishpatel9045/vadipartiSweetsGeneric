@@ -479,9 +479,26 @@ class UserDashboardStatTemplateView(TemplateView):
         user_deposit = UserDeposits.objects.filter(user=user).aggregate(
             total_deposits=Sum("amount")
         )
-
+        order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user").filter(booking__book__user=user)
+        order_items_data = {}
+        
+        for item in order_items:
+            key = str(item.item.base_item.pk)
+            if key not in order_items_data:
+                order_items_data[key] = {
+                    "name": item.item.base_item.name,
+                    "total_quantity": 0,
+                    "total_amount": 0
+                }
+            order_items_data[key]["total_quantity"] += int(item.order_quantity) * float(item.item.box_size)
+            order_items_data[key]["total_amount"] += int(item.order_quantity) * item.item.price
+        order_items_data = list(order_items_data.values())
+        for i in range(len(order_items_data)):
+            order_items_data[i]["total_quantity"] = convert_number_to_weight(order_items_data[i]["total_quantity"])
+        
         return {
             "total_orders": total_summary.get("total_orders", 0) or 0,
+            "order_items": order_items_data or [],
             "total_received": total_summary.get("total_received", 0) or 0,
             "order_total": total_summary.get("user_total", 0) or 0,
             "user_deposit": user_deposit.get("total_deposits", 0) or 0,

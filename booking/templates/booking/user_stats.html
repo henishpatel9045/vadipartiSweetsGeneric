@@ -56,9 +56,36 @@
       </div>
     </div>
   </div>
+
+  <table class="table table-hover table-responsive table-dark">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Total Quantity</th>
+        <th>Total Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      {% for item in order_items %}
+        <tr>
+          <th>{{item.name}}</th>
+          <td>{{item.total_quantity}}</td>
+          <td class="amount">{{item.total_amount}}</td>
+        </tr>
+      {% endfor %}
+        
+    </tbody>
+  </table>
+
 </div>
 
 <script>
+  
+  document.querySelectorAll(".amount")?.forEach(element => {
+    element.innerHTML = (Number.parseFloat(element.innerHTML).toLocaleString() || 0) + ' INR'
+  });
+
 
   let totalOrderAmount = document.getElementById('total-order-amount-box');
   let totalReceivedAmount = document.getElementById('total-received-box');
