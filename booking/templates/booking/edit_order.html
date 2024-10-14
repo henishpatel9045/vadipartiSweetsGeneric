@@ -19,6 +19,11 @@ Edit Order
 </style>
 <div class="w-100 p-0 p-md-2 mx-0">
     <h1>Edit Order #{{order_number}}</h1>
+    
+    {% if order.is_special_price %}
+    <h2 style="font-size: 1.2rem; color: red; font-weight: bold;">This is Special Order (contact admin for editing this order).</h2>
+    {% endif %}
+        
     <div class="w-100 mb-3">
         <nav aria-label="breadcrumb"">
             <ol class="breadcrumb">
