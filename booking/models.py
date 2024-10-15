@@ -28,7 +28,7 @@ class Order(DateTimeBaseModel):
     is_special_price = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.bill_number} {self.customer_name}"
+        return f"{self.bill_number} - {self.customer_name}"
 
     class Meta:
         ordering = ["bill_number"]

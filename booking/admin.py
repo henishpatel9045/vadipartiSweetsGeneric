@@ -18,6 +18,25 @@ admin.site.index_title = "Vadiparti Sweets 2024"
 admin.site.site_url = "/home"
 
 
+@admin.register(OrderItem)
+class OrderItemModelAdmin(admin.ModelAdmin):
+    list_display = [
+        "booking",
+        "item",
+        "order_quantity",
+        "delivered_quantity",
+        "created_at",
+        "updated_at",
+    ]
+    list_filter = [
+        "item__base_item",
+        "booking__book__user"
+    ]
+    search_fields = [
+        "booking__bill_number",
+    ]
+
+
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
@@ -41,6 +60,7 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "is_special_price",
         "has_comment",
         "created_at",
+        "updated_at",
     ]
     list_filter = (
         OrderDealerFilter,
@@ -57,12 +77,8 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     def has_comment(self, obj: Order) -> bool:
         if bool(obj.comment):
-            return format_html(
-                '<img src="/static/admin/img/icon-yes.svg" alt="True">'
-            )
-        return format_html(
-                '<img src="/static/admin/img/icon-no.svg" alt="False">'
-            )
+            return format_html('<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        return format_html('<img src="/static/admin/img/icon-no.svg" alt="False">')
 
     def full_dispatch(self, request: HttpRequest, obj: Order) -> None:
         try:
