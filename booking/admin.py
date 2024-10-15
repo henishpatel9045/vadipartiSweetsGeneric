@@ -59,6 +59,7 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "received_amount",
         "is_special_price",
         "has_comment",
+        "comment",
         "created_at",
         "updated_at",
     ]
