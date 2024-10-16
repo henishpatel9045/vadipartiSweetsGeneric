@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.admin.models import LogEntry
 
 from .models import User
 from management.models import UserDeposits, BillBook
@@ -11,7 +12,7 @@ from .forms import CustomUserCreationForm
 class UserDepositsInline(admin.TabularInline):
     model = UserDeposits
     extra = 0
-    
+
 
 class BillBookInline(admin.TabularInline):
     model = BillBook
@@ -25,3 +26,15 @@ class UserModelAdmin(UserAdmin):
         BillBookInline,
     ]
     add_form = CustomUserCreationForm
+
+
+@admin.register(LogEntry)
+class LogEntryModelAdmin(admin.ModelAdmin):
+    list_display = (
+        "content_type",
+        "user",
+        "object_repr",
+        "action_flag",
+        "change_message",
+        "action_time",
+    )
