@@ -161,6 +161,10 @@ def write_orders_data(
     add_title(curr_row, curr_col, curr_row + 1, curr_col, "Total Amount", style={"border_color": "black", "border": 1})
     curr_col += 1
     add_title(curr_row, curr_col, curr_row + 1, curr_col, "Amount Received", style={"border_color": "black", "border": 1})
+    curr_col += 1
+    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Comment", style={"border_color": "black", "border": 1})
+    curr_col += 1
+    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Is Special Price", style={"border_color": "black", "border": 1})
     curr_row += 2
     curr_col = start_col
 
@@ -187,6 +191,10 @@ def write_orders_data(
         worksheet.write_number(
             curr_row, curr_col, order["amount_received"], DATA_CELL_FORMAT
         )
+        curr_col += 1
+        worksheet.write(curr_row, curr_col, order["comment"], DATA_CELL_FORMAT)
+        curr_col += 1
+        worksheet.write(curr_row, curr_col, order["is_special_price"], DATA_CELL_FORMAT)
         curr_row += 1
         curr_col = start_col
 
@@ -201,6 +209,8 @@ def export_data(queryset, worksheet, excel_file, output):
                 "items": {},
                 "total_amount": order.booking.total_order_price,
                 "amount_received": order.booking.received_amount,
+                "comment": order.booking.comment,
+                "is_special_price": order.booking.is_special_price,
             }
         item_name = order.item.base_item.name
         size = convert_number_to_weight(order.item.box_size)
@@ -223,7 +233,10 @@ def export_all_data():
         for user in User.objects.all():
             SHEET_NAME = f"{user.username}"
             worksheet = excel_file.add_worksheet(SHEET_NAME)
-            export_data(queryset.filter(booking__book__user=user), worksheet, excel_file, output)
+            if user.is_superuser:
+                export_data(queryset, worksheet, excel_file, output)
+            else:
+                export_data(queryset.filter(booking__book__user=user), worksheet, excel_file, output)
         excel_file.close()
         output.seek(0)
         return output.read()

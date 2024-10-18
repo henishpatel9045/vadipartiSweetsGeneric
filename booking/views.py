@@ -16,7 +16,10 @@ from rest_framework.request import Request
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from booking.decorators import login_required, login_required_func as login_required_single
+from booking.decorators import (
+    login_required,
+    login_required_func as login_required_single,
+)
 from booking.models import Order, OrderItem
 from booking.utils import create_booking, delete_order, update_booking
 from management.models import Item, UserDeposits
@@ -63,7 +66,7 @@ class NewOrderTemplateView(TemplateView):
             "items_data": item_data,
             "date": timezone.now().strftime("%Y-%m-%d"),
         }
-    
+
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
@@ -156,7 +159,7 @@ class EditOrderTemplateView(TemplateView):
             "received_amount": order.received_amount,
             "special_note": order.comment,
         }
-    
+
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
@@ -340,32 +343,37 @@ class OrdersPrintTemplateView(TemplateView):
         for order_item in order_items:
             booking_id = str(order_item.booking.bill_number)
             if booking_id not in order_items_data:
-                order_items_data[booking_id] = {}
+                order_items_data[booking_id] = {
+                    "order_comment": order_item.booking.comment,
+                    "is_special_booking": order_item.booking.is_special_price,
+                    "items": {},
+                }
             item_pk = str(order_item.item.pk)
-            if item_pk not in order_items_data[booking_id]:
-                order_items_data[booking_id][item_pk] = {
+            if item_pk not in order_items_data[booking_id]["items"]:
+                order_items_data[booking_id]["items"][item_pk] = {
                     "book_number": order_item.booking.book.book_number,
                     "name": f"{order_item.item.base_item.name} ({convert_number_to_weight(order_item.item.box_size)})",
+                    "comment": order_item.comment,
                     "order_quantity": order_item.order_quantity,
                     "delivered_quantity": order_item.delivered_quantity,
                     "remaining_quantity": order_item.order_quantity
                     - order_item.delivered_quantity,
                 }
             else:
-                order_items_data[booking_id][item_pk][
+                order_items_data[booking_id]["items"][item_pk][
                     "order_quantity"
                 ] += order_item.order_quantity
-                order_items_data[booking_id][item_pk][
+                order_items_data[booking_id]["items"][item_pk][
                     "delivered_quantity"
                 ] += order_item.delivered_quantity
-                order_items_data[booking_id][item_pk]["remaining_quantity"] += (
-                    order_item.order_quantity - order_item.delivered_quantity
-                )
+                order_items_data[booking_id]["items"][item_pk][
+                    "remaining_quantity"
+                ] += (order_item.order_quantity - order_item.delivered_quantity)
 
         orders_data = {}
         for order_item in order_items_data:
             try:
-                item_data = order_items_data[order_item]
+                item_data = order_items_data[order_item]["items"]
                 book_number = str(item_data[list(item_data.keys())[0]]["book_number"])
                 if book_number not in orders_data:
                     orders_data[book_number] = {
@@ -374,7 +382,11 @@ class OrdersPrintTemplateView(TemplateView):
                         "orders": [],
                     }
                 orders_data[book_number]["orders"].append(
-                    {"bill_number": order_item, "items": item_data}
+                    {
+                        "bill_number": order_item,
+                        "order_comment": order_items_data[order_item]["order_comment"],
+                        "items": item_data,
+                    }
                 )
                 for item in item_data:
                     if item not in orders_data[book_number]["book_summary"]:
@@ -412,6 +424,7 @@ class OrdersPrintTemplateView(TemplateView):
                 "orders": [
                     {
                         "bill_number": single_order["bill_number"],
+                        "order_comment": single_order["order_comment"],
                         "items": list(single_order["items"].values()),
                     }
                     for single_order in order["orders"]
@@ -444,7 +457,7 @@ class OrdersPrintTemplateView(TemplateView):
 
 class AdminHomeTemplateView(TemplateView):
     template_name = "admin_home.html"
-    
+
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
@@ -479,23 +492,31 @@ class UserDashboardStatTemplateView(TemplateView):
         user_deposit = UserDeposits.objects.filter(user=user).aggregate(
             total_deposits=Sum("amount")
         )
-        order_items = OrderItem.objects.prefetch_related("booking", "booking__book", "booking__book__user").filter(booking__book__user=user)
+        order_items = OrderItem.objects.prefetch_related(
+            "booking", "booking__book", "booking__book__user"
+        ).filter(booking__book__user=user)
         order_items_data = {}
-        
+
         for item in order_items:
             key = str(item.item.base_item.pk)
             if key not in order_items_data:
                 order_items_data[key] = {
                     "name": item.item.base_item.name,
                     "total_quantity": 0,
-                    "total_amount": 0
+                    "total_amount": 0,
                 }
-            order_items_data[key]["total_quantity"] += int(item.order_quantity) * float(item.item.box_size)
-            order_items_data[key]["total_amount"] += int(item.order_quantity) * item.item.price
+            order_items_data[key]["total_quantity"] += int(item.order_quantity) * float(
+                item.item.box_size
+            )
+            order_items_data[key]["total_amount"] += (
+                int(item.order_quantity) * item.item.price
+            )
         order_items_data = list(order_items_data.values())
         for i in range(len(order_items_data)):
-            order_items_data[i]["total_quantity"] = convert_number_to_weight(order_items_data[i]["total_quantity"])
-        
+            order_items_data[i]["total_quantity"] = convert_number_to_weight(
+                order_items_data[i]["total_quantity"]
+            )
+
         return {
             "total_orders": total_summary.get("total_orders", 0) or 0,
             "order_items": order_items_data or [],
@@ -503,7 +524,7 @@ class UserDashboardStatTemplateView(TemplateView):
             "order_total": total_summary.get("user_total", 0) or 0,
             "user_deposit": user_deposit.get("total_deposits", 0) or 0,
         }
-        
+
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
@@ -514,19 +535,26 @@ class UserDepositsTemplateView(TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         user = self.request.user
-        total_order_amount = Order.objects.filter(book__user=user).aggregate(
-            total_order_amount=Sum("total_order_price")
-        ).get("total_order_amount", 0) or 0
+        total_order_amount = (
+            Order.objects.filter(book__user=user)
+            .aggregate(total_order_amount=Sum("total_order_price"))
+            .get("total_order_amount", 0)
+            or 0
+        )
         deposits = UserDeposits.objects.filter(user=user)
         total_deposit = 0
         for deposit in deposits:
             total_deposit += deposit.amount
-        return {"user_deposits": deposits, "total_order_amount": total_order_amount, "total_deposit_received": total_deposit}
+        return {
+            "user_deposits": deposits,
+            "total_order_amount": total_order_amount,
+            "total_deposit_received": total_deposit,
+        }
 
     @login_required
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return super().get(request, *args, **kwargs)
-    
+
 
 class UserOrderDeliveryStatusTemplateView(TemplateView):
     template_name = "booking/user_order_delivery_status.html"
@@ -576,7 +604,7 @@ class UserOrderDeliveryStatusTemplateView(TemplateView):
                     "items": list(order_items_data[order_item].values()),
                 }
             )
-        
+
         orders_data = sorted(orders_data, key=lambda x: int(x["bill_number"]))
         context["orders_data"] = orders_data
         return context
