@@ -94,21 +94,26 @@
                     <td style="text-align: center;" contenteditable="true">{{item.remaining_quantity}}</td>
                 </tr>
                 {% endfor %}
-                <tr>
+                <tr class="summary">
                     <td colspan="4"></td>
                 </tr>
 
                 {% for order in book.orders %}
-                <tr style="border-top: 1px solid gray;" >
-                    <td colspan="4" class="title">Order: {{order.bill_number}}</td>
+                <tr style="border-top: 0px solid gray; border-bottom: 0;" 
+                {% if order.order_comment %}
+                    class="summary"
+                {% endif %}
+                    >
+                    <td colspan="4" class="title" style="border-bottom: 0;">Order: {{order.bill_number}}</td>
                 </tr>
                 
                 {% if request.GET.include_comments == 'on' and order.order_comment %}
-                <tr>
-                    <td colspan="4" class="title">
+                <tr class="summary" style="border-top: 0;">
+                    <td colspan="4" class="title" style="border-top: 0;">
                         <b>Comments:</b> {{order.order_comment}}
                     </td>
                 </tr>
+                
                 {% endif %}
                     
                 {% for order_item in order.items %}
@@ -119,6 +124,15 @@
                     <td style="text-align: center;" contenteditable="true">{{order_item.remaining_quantity}}</td>
                 </tr>
                 {% endfor %}
+                <tr 
+                
+                {% if order.order_comment %}
+                    class="summary"
+                {% endif %}
+                    
+                >
+                    <td colspan="4"></td>
+                </tr>
                 {% endfor %}
             {% endfor %}
 
@@ -145,6 +159,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
+        }
+    
+
+        th, td {
+            text-align: left;
+            border: 1px solid gray;
         }
 
         .border-box {
