@@ -53,7 +53,7 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "bill_number",
         "customer_name",
         "total_order_price",
-        "received_amount",
+        # "received_amount",
         "is_fully_dispatched",
         "is_partial_dispatched",
         "is_special_price",
