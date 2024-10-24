@@ -6,6 +6,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import json
+from django.views.generic import TemplateView
 
 from export.export import export_all_data, export_user_data
 from vadipartiSweets.utils import convert_number_to_weight
@@ -128,14 +129,11 @@ class AdminDashboardAPIView(APIView):
                     "ready_quantity": 0,
                     "box_quantity": {},
                 }
-            items_quantity[item_name][
-                "ready_quantity"
-            ] += ready_item.quantity * int(ready_item.item.box_size)
+            items_quantity[item_name]["ready_quantity"] += ready_item.quantity * int(
+                ready_item.item.box_size
+            )
             item_box = str(ready_item.item.box_size)
-            if (
-                item_box
-                not in items_quantity[item_name]["box_quantity"]
-            ):
+            if item_box not in items_quantity[item_name]["box_quantity"]:
                 items_quantity[item_name]["box_quantity"][
                     str(ready_item.item.box_size)
                 ] = {
@@ -143,7 +141,9 @@ class AdminDashboardAPIView(APIView):
                     "delivered_quantity": 0,
                     "ready_quantity": 0,
                 }
-            items_quantity[item_name]["box_quantity"][item_box]["ready_quantity"] += ready_item.quantity
+            items_quantity[item_name]["box_quantity"][item_box][
+                "ready_quantity"
+            ] += ready_item.quantity
 
         dealer_wise_data = {}
         for user in users:
@@ -193,7 +193,7 @@ class AdminDashboardAPIView(APIView):
             {"dealer": dealer_name, **data}
             for dealer_name, data in dealer_wise_data.items()
         ]
-        
+
         dealer_wise_data = sorted(
             dealer_wise_data, key=lambda x: x["total_order_amount"], reverse=True
         )
@@ -220,7 +220,7 @@ class AdminDashboardAPIView(APIView):
                     "ready_quantity": item_data["ready_quantity"],
                 }
             )
-            
+
         return Response(
             {
                 "total_orders": total_orders,
@@ -232,3 +232,7 @@ class AdminDashboardAPIView(APIView):
                 "item_box_wise_table_data": item_box_wise_table_data,
             }
         )
+
+
+class DepositPaymentFormTemplateView(TemplateView):
+    template_name = "management/deposit_payment.html"

@@ -26,6 +26,7 @@ class Order(DateTimeBaseModel):
     total_order_price = models.FloatField(default=0.0)
     received_amount = models.FloatField(default=0.0)
     is_special_price = models.BooleanField(default=False)
+    payment_deposited_by_customer = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.bill_number} - {self.customer_name}"

@@ -23,3 +23,9 @@ BOX_SIZE_MAPPING = {
     "1000": "1kg",
     "2000": "2kg",
 }
+
+PAYMENT_OPTIONS = [
+    ("Cash", "Cash"),
+    ("UPI", "UPI"),
+    ("Cheque", "Cheque"),
+]

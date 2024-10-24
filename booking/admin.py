@@ -58,6 +58,7 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "total_order_price",
         "received_amount",
         "is_special_price",
+        "payment_deposited_by_customer",
         "has_comment",
         "comment",
         "created_at",
@@ -68,6 +69,7 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         OrderBillBookFilter,
         OrderCommentFilter,
         "is_special_price",
+        "payment_deposited_by_customer",
     )
     change_actions = [
         "full_dispatch",

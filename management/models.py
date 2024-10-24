@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from vadipartiSweets.constants import BILL_BOOK_SIZE
+from vadipartiSweets.constants import BILL_BOOK_SIZE, PAYMENT_OPTIONS
 
 
 # Create your models here.
@@ -14,7 +14,7 @@ class ItemBase(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
     class Meta:
         ordering = ["order_index"]
 
@@ -23,7 +23,10 @@ class Item(models.Model):
     base_item = models.ForeignKey(
         ItemBase, on_delete=models.CASCADE, related_name="variants"
     )
-    box_size = models.CharField(max_length=20, help_text="Box size in grams i.e. for 500gms, enter 500, for 1kg, enter 1000.")
+    box_size = models.CharField(
+        max_length=20,
+        help_text="Box size in grams i.e. for 500gms, enter 500, for 1kg, enter 1000.",
+    )
     price = models.FloatField(default=0.0)
 
     def __str__(self):
@@ -45,12 +48,26 @@ class BillBook(models.Model):
 
 
 class UserDeposits(models.Model):
+    DEPOSIT_TYPES = [
+        ("For Order", "For Order"),
+        ("Dealer", "Dealer"),
+    ]
+
     user = models.ForeignKey(
         "custom_auth.User", on_delete=models.CASCADE, db_index=True
+    )
+    is_deposited_by_dealer = models.BooleanField(default=True)
+    order = models.ForeignKey(
+        "booking.Order", on_delete=models.CASCADE, null=True, blank=True, db_index=True
+    )
+    payment_option = models.CharField(
+        choices=PAYMENT_OPTIONS, default="Cash", max_length=20
     )
     amount = models.FloatField(default=0.0)
     date = models.DateTimeField(default=timezone.now)
     comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user} - {self.amount}"

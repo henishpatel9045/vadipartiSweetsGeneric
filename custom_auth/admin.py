@@ -38,3 +38,22 @@ class LogEntryModelAdmin(admin.ModelAdmin):
         "change_message",
         "action_time",
     )
+
+
+@admin.register(UserDeposits)
+class UserDepositsModelAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "order",
+        "is_deposited_by_dealer",
+        "amount",
+        "payment_option",
+        "date",
+        "comment",
+    )
+    search_fields = ("user__username", "order__bill_number")
+    list_filter = (
+        "is_deposited_by_dealer",
+        "payment_option",
+    )
+    date_hierarchy = "date"
