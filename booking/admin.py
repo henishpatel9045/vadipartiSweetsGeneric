@@ -8,7 +8,7 @@ from django.utils.html import format_html
 
 from booking.utils import update_price_of_booking
 from .models import Order, OrderItem
-from .filters import OrderDealerFilter, OrderBillBookFilter, OrderCommentFilter
+from .filters import OrderDealerFilter, OrderBillBookFilter, OrderCommentFilter, OrderIsPartialDispatchedListFilter, OrderIsFullyDispatchedListFilter
 
 # Register your models here.
 
@@ -28,10 +28,7 @@ class OrderItemModelAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     ]
-    list_filter = [
-        "item__base_item",
-        "booking__book__user"
-    ]
+    list_filter = ["item__base_item", "booking__book__user"]
     search_fields = [
         "booking__bill_number",
     ]
@@ -57,6 +54,8 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         "customer_name",
         "total_order_price",
         "received_amount",
+        "is_fully_dispatched",
+        "is_partial_dispatched",
         "is_special_price",
         "payment_deposited_by_customer",
         "has_comment",
@@ -68,6 +67,8 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
         OrderDealerFilter,
         OrderBillBookFilter,
         OrderCommentFilter,
+        OrderIsFullyDispatchedListFilter,
+        OrderIsPartialDispatchedListFilter,
         "is_special_price",
         "payment_deposited_by_customer",
     )
@@ -124,3 +125,38 @@ class OrderModelAdmin(DjangoObjectActions, admin.ModelAdmin):
                 self.message_user(request, "Order total price updated successfully")
         except Exception as e:
             self.message_user(request, f"Error: {e}", level="ERROR")
+
+    def changelist_view(self, request):
+        changelist_order_items = OrderItem.objects.prefetch_related(
+            "booking", "item"
+        ).all()
+        res = {}
+        for item in changelist_order_items:
+            id = str(item.booking.bill_number)
+            if id not in res:
+                res[id] = {
+                    "order_quantity": 0,
+                    "delivered_quantity": 0,
+                }
+            res[id]["order_quantity"] += item.order_quantity
+            res[id]["delivered_quantity"] += item.delivered_quantity
+        self.changelist_order_items = res
+        return super().changelist_view(request)
+
+    def is_fully_dispatched(self, obj: Order) -> bool:
+        if (
+            self.changelist_order_items[str(obj.bill_number)]["order_quantity"]
+            == self.changelist_order_items[str(obj.bill_number)]["delivered_quantity"]
+        ):
+            return format_html('<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        else:
+            return format_html('<img src="/static/admin/img/icon-no.svg" alt="False">')
+        
+
+    def is_partial_dispatched(self, obj: Order) -> bool:
+        if (
+            self.changelist_order_items[str(obj.bill_number)]["delivered_quantity"] > 0 and self.changelist_order_items[str(obj.bill_number)]["delivered_quantity"] != self.changelist_order_items[str(obj.bill_number)]["order_quantity"]
+        ):
+            return format_html('<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        else:
+            return format_html('<img src="/static/admin/img/icon-no.svg" alt="False">')
