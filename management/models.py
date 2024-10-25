@@ -79,6 +79,7 @@ class UserDeposits(models.Model):
 class DailyReadyItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="ready_items")
     quantity = models.IntegerField(default=0)
+    comment = models.TextField(default="")
     date = models.DateField(default=timezone.now)
 
     def __str__(self):
