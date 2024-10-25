@@ -1,130 +1,160 @@
-{% extends 'base.html' %}
-
-
-{% block title %}
-    Payment Deposit
-{% endblock %}
-    
-
+{% extends 'base.html' %} {% block title %} Payment Deposit {% endblock%} 
 {% block content %}
 <div class="container mt-5">
   <div class="card shadow-sm p-3 mb-5 bg-body rounded">
     <h3 class="card-header">Addition Form</h3>
-    <form id="additionForm">
+    <form id="additionForm" method="POST">
+      {% csrf_token %}
       <div class="row mb-3">
         <div class="col-md-6">
           <label for="depositType" class="fw-bold">Deposit Type:</label>
-          <select class="form-select" id="depositType" name="depositType">
-            <option value="cash">Cash</option>
-            <option value="cheque">Cheque</option>
-            <option value="neft">NEFT</option>
+          <select
+            class="form-select"
+            id="depositType"
+            name="depositType"
+          >
+            <option value="user">User</option>
+            <option value="customer">Customer</option>
           </select>
         </div>
         <div class="col-md-6">
           <label for="identifier" class="fw-bold">Identifier:</label>
-          <input type="text" class="form-control" id="identifier" name="identifier">
+          <input
+            type="text"
+            class="form-control"
+            id="identifier"
+            name="identifier"
+          />
         </div>
       </div>
       <div class="row mb-3">
         <div class="col-md-12">
           <label for="paymentType" class="fw-bold">Payment Type:</label>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="paymentTypeCash" name="paymentType" value="cash" checked>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="paymentTypeCash" name="paymentType" value="Cash" checked>
             <label class="form-check-label" for="paymentTypeCash">Cash</label>
           </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox"   
-id="paymentTypeCheque" name="paymentType" value="cheque">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="paymentTypeCheque" name="paymentType" value="Cheque">
             <label class="form-check-label" for="paymentTypeCheque">Cheque</label>
           </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="paymentTypeNeft" name="paymentType" value="neft">
-            <label class="form-check-label" for="paymentTypeNeft">NEFT</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" id="paymentTypeNeft" name="paymentType" value="UPI">
+            <label class="form-check-label" for="paymentTypeNeft">UPI</label>
           </div>
         </div>
       </div>
       <div class="row mb-3">
         <div class="col-md-6">
-          <label for="paymentAmount" class="fw-bold">Payment Amount:</label>
-          <input type="number" class="form-control" id="paymentAmount" name="paymentAmount" step="0.01">
+          <label for="paymentAmount" class="fw-bold"
+            >Payment Amount:</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            id="paymentAmount"
+            name="paymentAmount"
+            step="0.01"
+          />
         </div>
         <div class="col-md-6">
           <label for="datetime" class="fw-bold">Datetime:</label>
-          <input type="datetime-local" class="form-control" id="datetime" name="datetime" value="">
+          <input
+            type="datetime-local"
+            class="form-control"
+            id="datetime"
+            name="datetime"
+            value=""
+          />
         </div>
       </div>
       <div class="row">
         <div class="col-md-12">
           <label for="comment" class="fw-bold">Comment:</label>
-          <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+          <textarea
+            class="form-control"
+            id="comment"
+            name="comment"
+            rows="3"
+          ></textarea>
         </div>
       </div>
       <div class="row mt-3">
         <div class="col-md-12">
           <button type="submit" class="btn btn-primary">Submit</button>
-          <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>   
-
-        </div>   
-
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="resetForm()"
+          >
+            Reset
+          </button>
+           
+        </div>
+         
       </div>
     </form>
   </div>
 </div>
 
 <script>
-  const form = document.getElementById('additionForm');
-  const successAlert = document.createElement('div');
-  successAlert.classList.add('alert', 'alert-success', 'mt-3');
-  const errorAlert = document.createElement('div');
-  errorAlert.classList.add('alert', 'alert-danger', 'mt-3');
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById("additionForm");
+  const successAlert = document.createElement("div");
+  successAlert.classList.add("alert", "alert-success", "mt-3");
+  const errorAlert = document.createElement("div");
+  errorAlert.classList.add("alert", "alert-danger", "mt-3");
 
   // Set default datetime to current time
-  const datetimeInput = document.getElementById('datetime');
-  datetimeInput.valueAsDate = new Date();
+  const datetimeInput = document.getElementById("datetime");
+  // datetimeInput.valueAsDate = new Date();
 
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const formData = new FormData(form);
-    const data = {};
-
-    for (const [key,   
-value] of formData.entries()) {
-      data[key] = value;
-    }
+  // let submitBtn = form.querySelector("button[type=submit]");
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    successAlert.remove();
+    const data = {
+      deposit_type: form.depositType.value,
+      identifier: form.identifier.value.trim(),
+      payment_type: form.paymentType.value,
+      payment_amount: parseFloat(form.paymentAmount.value),
+      datetime: form.datetime.value,
+      comment: form.comment.value.trim()
+    };
 
     try {
-      const response = await fetch('/api/add',   
-{
-        method: 'POST',
+      const response = fetch("{% url 'payment-deposit-api' %}", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+         "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+      }).then(async (response) => {
+        if (response.ok) {
+          const responseData = await response.json();
+          successAlert.textContent = "Form submitted successfully!\n" + responseData.message;
+          form.parentElement.appendChild(successAlert);
+          resetForm();
+        } else {
+          const errorData = await response.json();
+          errorAlert.textContent =
+            errorData?.message || "An error occurred.";
+          form.parentElement.appendChild(errorAlert);
+        }
       });
 
-      if (response.ok) {
-        const responseData = await response.json();   
-
-        successAlert.textContent = 'Form submitted successfully!';
-        form.parentElement.appendChild(successAlert);
-        resetForm();
-      } else {
-        const errorData = await response.json();
-        errorAlert.textContent = errorData.message || 'An error occurred.';
-        form.parentElement.appendChild(errorAlert);
-      }
     } catch (error) {
-      errorAlert.textContent = 'Network error occurred.';
+      errorAlert.textContent = error?.message || "An error occurred.";
       form.parentElement.appendChild(errorAlert);
     }
   });
 
   function resetForm() {
     form.reset();
-    successAlert.remove();
     errorAlert.remove();
   }
+
+});
 </script>
 {% endblock %}
-    

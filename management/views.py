@@ -3,8 +3,10 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import permissions
 import json
 from django.views.generic import TemplateView
 
@@ -236,3 +238,84 @@ class AdminDashboardAPIView(APIView):
 
 class DepositPaymentFormTemplateView(TemplateView):
     template_name = "management/deposit_payment.html"
+
+
+class DepositPaymentAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        if not self.request.user.is_superuser:
+            return Response(
+                {"message": "You are not authorized to perform this action."}, status=403
+            )
+        try:
+            deposit_type = data.get("deposit_type")
+            identifier = data.get("identifier", "").strip()
+            payment_type = data.get("payment_type")
+            payment_amount = data.get("payment_amount", 0)
+            datetime = data.get("datetime")
+            comment = data.get("comment", "").strip()
+
+            with transaction.atomic():
+                order = None
+                if deposit_type == "customer":
+                    order = Order.objects.prefetch_related("book", "book__user").get(
+                        bill_number=identifier
+                    )
+                    user = order.book.user
+                    order.payment_deposited_by_customer = True
+                    comment = f"Payment deposited by customer of {payment_amount} INR via {payment_type}."
+                    if order.comment:
+                        order.comment += f"\n{comment}"
+                    else:
+                        order.comment = comment
+                    order.save()
+                    UserDeposits.objects.create(
+                        user=user,
+                        order=order,
+                        is_deposited_by_dealer=False,
+                        payment_option=payment_type,
+                        amount=float(payment_amount),
+                        date=datetime,
+                        comment=comment,
+                    )
+                    response_data = {
+                        "Deposited By": "Customer",
+                        "Bill Number": identifier,
+                        "Dealer number": identifier,
+                        "Payment Method": payment_type,
+                        "Payment Amount": payment_amount,
+                        "datetime": datetime,
+                        "comment": comment,
+                    }
+                else:
+                    user = User.objects.get(username=identifier)
+                    UserDeposits.objects.create(
+                        user=user,
+                        is_deposited_by_dealer=True,
+                        payment_option=payment_type,
+                        amount=float(payment_amount),
+                        date=datetime,
+                        comment=comment,
+                    )
+                    response_data = {
+                        "Deposited By": "Dealer",
+                        "Dealer number": identifier,
+                        "Payment Method": payment_type,
+                        "Payment Amount": payment_amount,
+                        "datetime": datetime,
+                        "comment": comment,
+                    }
+
+            return Response(
+                {
+                    "message": f"Payment added successfully with below data.\n{str(response_data)}"
+                }
+            )
+        except Order.DoesNotExist:
+            return Response(
+                {"message": f"Order with bill number {identifier} not found"},
+                status=404,
+            )
+        except Exception as e:
+            print(e)
+            return Response({"message": f"Error occurred.\nError: {str(e.args[0])}"}, status=400)
