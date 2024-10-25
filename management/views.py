@@ -288,7 +288,8 @@ class DepositPaymentAPIView(APIView):
                         "comment": comment,
                     }
                 else:
-                    user = User.objects.get(username=identifier)
+                    book = BillBook.objects.prefetch_related("user").get(book_number=int(identifier))
+                    user = book.user
                     UserDeposits.objects.create(
                         user=user,
                         is_deposited_by_dealer=True,
