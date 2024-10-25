@@ -344,6 +344,7 @@ class OrdersPrintTemplateView(TemplateView):
             booking_id = str(order_item.booking.bill_number)
             if booking_id not in order_items_data:
                 order_items_data[booking_id] = {
+                    "customer_name": order_item.booking.customer_name,
                     "order_comment": order_item.booking.comment,
                     "is_special_booking": order_item.booking.is_special_price,
                     "items": {},
@@ -385,6 +386,7 @@ class OrdersPrintTemplateView(TemplateView):
                     {
                         "bill_number": order_item,
                         "order_comment": order_items_data[order_item]["order_comment"],
+                        "customer_name": order_items_data[order_item]["customer_name"],
                         "items": item_data,
                     }
                 )
@@ -425,6 +427,7 @@ class OrdersPrintTemplateView(TemplateView):
                     {
                         "bill_number": single_order["bill_number"],
                         "order_comment": single_order["order_comment"],
+                        "customer_name": single_order["customer_name"],
                         "items": list(single_order["items"].values()),
                     }
                     for single_order in order["orders"]

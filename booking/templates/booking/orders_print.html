@@ -104,7 +104,7 @@
                     class="summary"
                 {% endif %}
                     >
-                    <td colspan="4" class="title" style="border-bottom: 0;">Order: {{order.bill_number}}</td>
+                    <td colspan="4" class="title" style="border-bottom: 0;">Order: {{order.bill_number}} - {{order.customer_name}}</td>
                 </tr>
                 
                 {% if request.GET.include_comments == 'on' and order.order_comment %}

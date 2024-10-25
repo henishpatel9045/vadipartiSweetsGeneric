@@ -50,6 +50,8 @@ class UserDepositsModelAdmin(admin.ModelAdmin):
         "payment_option",
         "date",
         "comment",
+        "created_at",
+        "updated_at"
     )
     search_fields = ("user__username", "order__bill_number")
     list_filter = (

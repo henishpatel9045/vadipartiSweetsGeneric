@@ -308,7 +308,8 @@ class DepositPaymentAPIView(APIView):
 
             return Response(
                 {
-                    "message": f"Payment added successfully with below data.\n{str(response_data)}"
+                    "message": f"Payment added successfully with below data.",
+                    "data": response_data,
                 }
             )
         except Order.DoesNotExist:
