@@ -92,8 +92,9 @@ class OrderIsFullyDispatchedListFilter(admin.SimpleListFilter):
         ]
         if self.value() == "True":
             return queryset.filter(bill_number__in=fully_dispatched)
-        else:
+        if self.value() == "False":
             return queryset.exclude(bill_number__in=fully_dispatched)
+        return queryset
         
 
 class OrderIsPartialDispatchedListFilter(admin.SimpleListFilter):
@@ -127,6 +128,6 @@ class OrderIsPartialDispatchedListFilter(admin.SimpleListFilter):
         ]
         if self.value() == "True":
             return queryset.filter(bill_number__in=partial_dispatched)
-        else:
+        if self.value() == "False":
             return queryset.exclude(bill_number__in=partial_dispatched)
-        
+        return queryset
