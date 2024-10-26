@@ -185,10 +185,18 @@ class AdminDashboardAPIView(APIView):
                 "total_order_amount"
             ] += order.total_order_price
 
+        total_deposit_data = {
+            "total_deposit": 0,
+            "Cash": 0,
+            "UPI": 0,
+            "Cheque": 0,
+        }
         total_deposit_amount = 0
         for user_deposit in user_deposit_queryset:
             dealer_name = user_deposit.user.username
             dealer_wise_data[dealer_name]["total_deposit"] += user_deposit.amount
+            total_deposit_data["total_deposit"] += user_deposit.amount
+            total_deposit_data[str(user_deposit.payment_option)] += user_deposit.amount
             total_deposit_amount += user_deposit.amount
 
         dealer_wise_data = [
@@ -202,6 +210,8 @@ class AdminDashboardAPIView(APIView):
 
         item_box_wise_table_data = []
         item_wise_table_data = []
+        total_dispatch = 0
+        total_dispatch_quantity = {}
         for item in items_quantity:
             item_data = items_quantity[item]
             for item_box in item_data["box_quantity"]:
@@ -214,18 +224,31 @@ class AdminDashboardAPIView(APIView):
                         "ready_quantity": item_box_data["ready_quantity"],
                     }
                 )
+                if item not in total_dispatch_quantity:
+                    total_dispatch_quantity[item] = 0
+                total_dispatch_quantity[item] += int(item_box) * item_box_data["delivered_quantity"]
+                total_dispatch += int(item_box) * item_box_data["delivered_quantity"]
+                
+            
             item_wise_table_data.append(
                 {
                     "item": item,
                     "quantity": item_data["quantity"],
                     "amount": item_data["amount"],
                     "ready_quantity": item_data["ready_quantity"],
+                    "delivered_quantity": f"{total_dispatch_quantity.get(item, 0) / 1000} KG",
                 }
             )
 
+        total_dispatch = f"{total_dispatch / 1000} KG"
+        for item in total_dispatch_quantity:
+            total_dispatch_quantity[item] = f"{total_dispatch_quantity[item] / 1000} KG"
         return Response(
             {
                 "total_orders": total_orders,
+                "total_deposit_data": total_deposit_data,
+                "total_dispatch": total_dispatch,
+                "total_dispatch_quantity": total_dispatch_quantity,
                 "total_order_amount": total_order_amount,
                 "total_deposit_amount": total_deposit_amount,
                 "total_dealers": len(dealer_wise_data),
