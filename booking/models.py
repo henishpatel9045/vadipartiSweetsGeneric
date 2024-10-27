@@ -46,3 +46,6 @@ class OrderItem(DateTimeBaseModel):
 
     def __str__(self):
         return f"{self.booking.bill_number} - {self.item.base_item.name}"
+
+    class Meta:
+        ordering = ["item__base_item__order_index"]

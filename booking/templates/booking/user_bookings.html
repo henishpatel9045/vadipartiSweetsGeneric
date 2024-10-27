@@ -1,4 +1,5 @@
 {% extends "booking/user_base.html" %} {% block child_content %}
+{% load static %}
 <div class="w-full">
   {% if user.is_superuser %}
   <div class="row mb-3 flex justify-content-between mx-1">
@@ -38,6 +39,7 @@
         {% comment %}
         <th>Date</th>
         {% endcomment %}
+        <th>Delivery Status</th>
         <th>Total Amount</th>
         <th>Advance Paid</th>
         {% comment %}
@@ -54,6 +56,15 @@
         {% comment %}
         <td>{{ order.date }}</td>
         {% endcomment %}
+        <td>
+          
+          {% if order.delivered_quantity > 0 and order.ordered_quantity == order.delivered_quantity %}
+          <img src="{% static '/admin/img/icon-yes.svg' %}" alt="True">
+          {% else %}
+          <img src="{% static '/admin/img/icon-no.svg' %}" alt="True">
+          {% endif %}
+            
+        </td>
         <td style="color: green; font-weight: bold">
           {{ order.total_order_price }} ₹
         </td>

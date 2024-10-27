@@ -284,6 +284,25 @@ class UserBookingsTemplateView(TemplateView):
                 if self.request.user.is_superuser == False
                 else Order.objects.prefetch_related("book", "book__user").all()
             )
+        
+        order_items = OrderItem.objects.prefetch_related("booking", "booking__book__user").all()
+        if not self.request.user.is_superuser:
+            order_items = order_items.filter(booking__book__user=self.request.user)
+        order_items_data = {}
+        for o_item in order_items:
+            booking_id = str(o_item.booking.bill_number)
+            if booking_id not in order_items_data:
+                order_items_data[booking_id] = {
+                    "order_quantity": 0,
+                    "delivered_quantity": 0,
+                }
+            order_items_data[booking_id]["order_quantity"] += o_item.order_quantity
+            order_items_data[booking_id]["delivered_quantity"] += o_item.delivered_quantity
+        
+        q_set = dealer_orders
+        for q in q_set:
+            q.ordered_quantity = order_items_data.get(str(q.bill_number), {}).get("order_quantity", 1)
+            q.delivered_quantity = order_items_data.get(str(q.bill_number), {}).get("delivered_quantity", 0)
         paginator = Paginator(dealer_orders, 50)  # Create a Paginator object
         page_number = self.request.GET.get("page")
         page = paginator.get_page(page_number)
