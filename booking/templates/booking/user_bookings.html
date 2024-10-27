@@ -39,7 +39,7 @@
         {% comment %}
         <th>Date</th>
         {% endcomment %}
-        <th>Delivery Status</th>
+        {% comment %} <th>Delivery Status</th> {% endcomment %}
         <th>Total Amount</th>
         <th>Advance Paid</th>
         {% comment %}
@@ -56,7 +56,7 @@
         {% comment %}
         <td>{{ order.date }}</td>
         {% endcomment %}
-        <td>
+        {% comment %} <td>
           
           {% if order.delivered_quantity > 0 and order.ordered_quantity == order.delivered_quantity %}
           <img src="{% static '/admin/img/icon-yes.svg' %}" alt="True">
@@ -64,7 +64,7 @@
           <img src="{% static '/admin/img/icon-no.svg' %}" alt="True">
           {% endif %}
             
-        </td>
+        </td> {% endcomment %}
         <td style="color: green; font-weight: bold">
           {{ order.total_order_price }} ₹
         </td>
