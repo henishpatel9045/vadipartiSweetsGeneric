@@ -10,7 +10,7 @@ from rest_framework import permissions
 import json
 from django.views.generic import TemplateView
 
-from export.export import export_all_data, export_user_data
+from export.export import export_all_data, export_for_deposit, export_user_data
 from vadipartiSweets.utils import convert_number_to_weight
 from .forms import ConfigForm
 from booking.models import Order, OrderItem
@@ -226,10 +226,11 @@ class AdminDashboardAPIView(APIView):
                 )
                 if item not in total_dispatch_quantity:
                     total_dispatch_quantity[item] = 0
-                total_dispatch_quantity[item] += int(item_box) * item_box_data["delivered_quantity"]
+                total_dispatch_quantity[item] += (
+                    int(item_box) * item_box_data["delivered_quantity"]
+                )
                 total_dispatch += int(item_box) * item_box_data["delivered_quantity"]
-                
-            
+
             item_wise_table_data.append(
                 {
                     "item": item,
@@ -268,7 +269,8 @@ class DepositPaymentAPIView(APIView):
         data = request.data
         if not self.request.user.is_superuser:
             return Response(
-                {"message": "You are not authorized to perform this action."}, status=403
+                {"message": "You are not authorized to perform this action."},
+                status=403,
             )
         try:
             deposit_type = data.get("deposit_type")
@@ -311,7 +313,9 @@ class DepositPaymentAPIView(APIView):
                         "comment": comment,
                     }
                 else:
-                    book = BillBook.objects.prefetch_related("user").get(book_number=int(identifier))
+                    book = BillBook.objects.prefetch_related("user").get(
+                        book_number=int(identifier)
+                    )
                     user = book.user
                     UserDeposits.objects.create(
                         user=user,
@@ -343,4 +347,23 @@ class DepositPaymentAPIView(APIView):
             )
         except Exception as e:
             print(e)
-            return Response({"message": f"Error occurred.\nError: {str(e.args[0])}"}, status=400)
+            return Response(
+                {"message": f"Error occurred.\nError: {str(e.args[0])}"}, status=400
+            )
+
+
+@login_required
+def download_deposit_excel(request):
+    # try:
+        FILE_NAME = (
+            f"Deposits - {request.user} - ({timezone.now().strftime('%d-%m-%Y')}).xlsx"
+        )
+        excel_buffer = export_for_deposit()
+        # Create an HTTP response with the Excel data
+        response = HttpResponse(content_type="application/ms-excel")
+        response["Content-Disposition"] = f'attachment; filename="{FILE_NAME}"'
+        response.write(excel_buffer)
+        return response
+    # except Exception as e:
+    #     print(e)
+    #     return JsonResponse({"detail": "error occurred"})

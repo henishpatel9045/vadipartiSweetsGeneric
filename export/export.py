@@ -4,7 +4,7 @@ import xlsxwriter
 import xlsxwriter.worksheet
 
 from booking.models import OrderItem
-from management.models import Item
+from management.models import Item, UserDeposits
 from vadipartiSweets.utils import convert_number_to_weight
 
 
@@ -158,13 +158,41 @@ def write_orders_data(
                 style={"border_color": "black", "bottom": 1, "left": 1, "right": 1},
             )
             curr_col += 1
-    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Total Amount", style={"border_color": "black", "border": 1})
+    add_title(
+        curr_row,
+        curr_col,
+        curr_row + 1,
+        curr_col,
+        "Total Amount",
+        style={"border_color": "black", "border": 1},
+    )
     curr_col += 1
-    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Amount Received", style={"border_color": "black", "border": 1})
+    add_title(
+        curr_row,
+        curr_col,
+        curr_row + 1,
+        curr_col,
+        "Amount Received",
+        style={"border_color": "black", "border": 1},
+    )
     curr_col += 1
-    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Comment", style={"border_color": "black", "border": 1})
+    add_title(
+        curr_row,
+        curr_col,
+        curr_row + 1,
+        curr_col,
+        "Comment",
+        style={"border_color": "black", "border": 1},
+    )
     curr_col += 1
-    add_title(curr_row, curr_col, curr_row + 1, curr_col, "Is Special Price", style={"border_color": "black", "border": 1})
+    add_title(
+        curr_row,
+        curr_col,
+        curr_row + 1,
+        curr_col,
+        "Is Special Price",
+        style={"border_color": "black", "border": 1},
+    )
     curr_row += 2
     curr_col = start_col
 
@@ -220,7 +248,7 @@ def export_data(queryset, worksheet, excel_file, output):
 
     order_data = [(k, v) for k, v in order_data.items()]
     order_data = sorted(order_data, key=lambda x: x[1]["bill_number"])
-    
+
     write_orders_data(worksheet, excel_file, order_data, 0, 0)
 
 
@@ -236,10 +264,16 @@ def export_all_data():
             if user.is_superuser:
                 export_data(queryset, worksheet, excel_file, output)
             else:
-                export_data(queryset.filter(booking__book__user=user), worksheet, excel_file, output)
+                export_data(
+                    queryset.filter(booking__book__user=user),
+                    worksheet,
+                    excel_file,
+                    output,
+                )
         excel_file.close()
         output.seek(0)
         return output.read()
+
 
 def export_user_data(user):
     with BytesIO() as output:
@@ -250,6 +284,129 @@ def export_user_data(user):
             "booking", "booking__book", "booking__book__user", "item", "item__base_item"
         ).filter(booking__book__user=user)
         export_data(queryset, worksheet, excel_file, output)
+        excel_file.close()
+        output.seek(0)
+        return output.read()
+
+
+def export_deposits_data(
+    queryset: list[UserDeposits], worksheet, excel_file, curr_row, curr_col
+):
+    def add_title(
+        row, col, end_row, end_col, title: str, is_single_cell: bool = False, style={}
+    ):
+        is_single_cell = is_single_cell or (row == end_row and col == end_col)
+        if is_single_cell:
+            worksheet.write(
+                row,
+                col,
+                title,
+                excel_file.add_format(
+                    {
+                        "bg_color": COMMON_COLOR,
+                        "color": "white",
+                        "bold": True,
+                        "align": "center",
+                        "valign": "vcenter",
+                        "size": 18,
+                        **style,
+                    }
+                ),
+            )
+        else:
+            worksheet.merge_range(
+                row,
+                col,
+                end_row,
+                end_col,
+                title,
+                excel_file.add_format(
+                    {
+                        "bg_color": COMMON_COLOR,
+                        "font_color": "white",
+                        "bold": True,
+                        "align": "center",
+                        "valign": "vcenter",
+                        "size": 18,
+                        **style,
+                    }
+                ),
+            )
+
+    TITLES = [
+        "Dealer Number",
+        "Dealer Name",
+        "Amount",
+        "Payment Option",
+        "Date",
+        "Is Deposited By Dealer",
+        "Bill Number",
+        "Comment",
+    ]
+    curr_row = 0
+    curr_col = 0
+    for title in TITLES:
+        add_title(
+            curr_row,
+            curr_col,
+            curr_row,
+            curr_col,
+            title,
+            style={"border_color": "black", "border": 1},
+        )
+        curr_col += 1
+    curr_row += 1
+    curr_col = 0
+
+    DATA_CELL_FORMAT = excel_file.add_format(
+        {
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+        }
+    )
+
+    for deposit in queryset:
+        try:
+            bill_number = deposit.order.bill_number
+        except Exception as e:
+            bill_number = ""
+        worksheet.write(
+            curr_row, curr_col, deposit.user.username, DATA_CELL_FORMAT
+        )
+        curr_col += 1
+        worksheet.write(
+            curr_row, curr_col, deposit.user.get_full_name(), DATA_CELL_FORMAT
+        )
+        curr_col += 1
+        worksheet.write_number(curr_row, curr_col, deposit.amount, DATA_CELL_FORMAT)
+        curr_col += 1
+        worksheet.write(curr_row, curr_col, deposit.payment_option, DATA_CELL_FORMAT)
+        curr_col += 1
+        worksheet.write(
+            curr_row, curr_col, deposit.date.strftime("%Y-%m-%d || %H:%M:%S %p"), DATA_CELL_FORMAT
+        )
+        curr_col += 1
+        worksheet.write(
+            curr_row, curr_col, deposit.is_deposited_by_dealer, DATA_CELL_FORMAT
+        )
+        curr_col += 1
+        worksheet.write(
+            curr_row, curr_col, bill_number, DATA_CELL_FORMAT
+        )
+        curr_col += 1
+        worksheet.write(curr_row, curr_col, deposit.comment, DATA_CELL_FORMAT)
+        curr_row += 1
+        curr_col = 0
+
+
+def export_for_deposit():
+    with BytesIO() as output:
+        SHEET_NAME = "Deposits"
+        excel_file = xlsxwriter.Workbook(output)
+        worksheet = excel_file.add_worksheet(SHEET_NAME)
+        queryset = UserDeposits.objects.prefetch_related("user", "order").all()
+        export_deposits_data(queryset, worksheet, excel_file, 0, 0)
         excel_file.close()
         output.seek(0)
         return output.read()
